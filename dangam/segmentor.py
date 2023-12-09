@@ -7,10 +7,6 @@ from collections import defaultdict
 from .config import EmotionSegmentatorConfig
 from transformers import AutoTokenizer, AutoModelForSequenceClassification, AutoModel
 
-from konlpy.tag import Okt
-
-okt = Okt()
-
 cfg = {
     'model_name': 'hun3359/klue-bert-base-sentiment',
     'sub_model_name': 'WhitePeak/bert-base-cased-Korean-sentiment',

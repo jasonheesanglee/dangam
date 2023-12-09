@@ -11,10 +11,29 @@ setup(
     author_email='jason.heesang.lee96@gmail.com',
     url='https://github.com/jasonheesanglee/dangam',
     install_requires=[
-        # List of dependencies,
+        'torch>=1.10.0',
+        'numpy>=1.21.0',
+        'tqdm>=4.62.0',
+        'transformers>=4.10.0',
+        'scipy>=1.7.0',
+        'pandas>=1.3.0',
+        'regex>=2021.8.0'
     ],
     classifiers=[
-        # Development status, intended audience, license, etc.
-        # See: https://pypi.org/classifiers/
+        # Choose the development status of your package
+        'Development Status :: 1 - Planning',
+
+        'Intended Audience :: Science/Research',
+
+        'Topic :: Software Development :: Libraries :: Python Modules',
+
+        'License :: OSI Approved :: MIT License',
+
+        'Programming Language :: Python :: 3',
+
+        'Programming Language :: Python :: 3.10 :: Only',
+
+        'Operating System :: OS Independent',  # Use specific OS classifiers if your package is OS-dependent
+
     ]
 )
