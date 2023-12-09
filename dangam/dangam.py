@@ -4,7 +4,7 @@ import numpy as np
 from tqdm.auto import tqdm
 import torch.nn.functional as F
 from collections import defaultdict
-from .config import EmotionSegmentatorConfig
+from .config import DanGamConfig
 from transformers import AutoTokenizer, AutoModelForSequenceClassification, AutoModel
 
 cfg = {
@@ -20,7 +20,7 @@ cfg = {
     'sent_spec_emo_col': 'klue_specific_emo',
     'max_length': 512
 }
-cfg = EmotionSegmentatorConfig(cfg)
+cfg = DanGamConfig(cfg)
 
 
 class DotDict(dict):
@@ -58,9 +58,10 @@ neut_tag = [17, 28, 29, 31, 33, 42]
 
 
 # noinspection PyTypeChecker
-class EmotionSegmentator:
+class DanGam:
     """
-    The EmotionSegmentator class is designed for emotion analysis in textual data. It leverages advanced NLP models
+    The DanGam class is designed for emotion analysis in textual data.
+    It leverages advanced NLP models
     to segment general and specific emotions at both sentence and word levels.
 
     Attributes:
@@ -105,7 +106,7 @@ CAUTION
 This logic performs the best with the models that are pretrained with
 AI HUB Dataset https://aihub.or.kr/aihubdata/data/view.do?currMenu=115&topMenu=100&aihubDataSe=realm&dataSetSn=86
 or any Dataset that has 60 sentiment tags listed as described in https://huggingface.co/hun3359/klue-bert-base-sentiment/blob/main/config.json\n
-You can also modify configuration by calling EmotionSegmentatorConfig()
+You can also modify configuration by calling DanGamConfig()
         '''
               )
         self.tokenizer = AutoTokenizer.from_pretrained(cfg.model_name)
@@ -129,7 +130,7 @@ You can also modify configuration by calling EmotionSegmentatorConfig()
 
     def cfg_info(self):
         """
-        Prints the current configuration information of the EmotionSegmentator.
+        Prints the current configuration information of the DanGam.
         Includes details about the models used, text and emotion column names, and other settings.
         """
         print(f"""

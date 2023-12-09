@@ -1,2 +1,2 @@
-from .segmentor import EmotionSegmentator
-from .config import EmotionSegmentorConfig
+from .dangam import DanGam
+from .config import DanGamConfig

@@ -5,12 +5,12 @@ class DotDict(dict):
     __delattr__ = dict.__delitem__
 
 
-class EmotionSegmentatorConfig:
+class DanGamConfig:
     """
-    Configuration class for EmotionSegmentator. It handles the setup of model parameters and preferences.
+    Configuration class for DanGam. It handles the setup of model parameters and preferences.
 
     Attributes:
-        VERSION (str): Version of the EmotionSegmentator.
+        VERSION (str): Version of the DanGam.
         CREATED_BY (str): Creator information.
 
     Methods:
@@ -62,7 +62,7 @@ class EmotionSegmentatorConfig:
 
     def __init__(self, cfg=None):
         """
-        Initializes the EmotionSegmentatorConfig with default or user-provided settings.
+        Initializes the DanGamConfig with default or user-provided settings.
 
         Args:
             cfg (dict, optional): A dictionary containing configuration settings.
