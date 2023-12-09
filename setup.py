@@ -1,7 +1,7 @@
 from setuptools import setup, find_packages
 
 setup(
-    name='dangam',
+    name='DanGam',
     version='0.1.1',
     packages=find_packages(),
     description='A brief description of your package',
@@ -21,7 +21,7 @@ setup(
     ],
     classifiers=[
         # Choose the development status of your package
-        'Development Status :: 1 - Planning',
+        'Development Status :: 2 - Pre-Alpha',
 
         'Intended Audience :: Science/Research',
 
