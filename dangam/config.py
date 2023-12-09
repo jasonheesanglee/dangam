@@ -6,6 +6,17 @@ class DotDict(dict):
 
 
 class EmotionSegmentatorConfig:
+    """
+    Configuration class for EmotionSegmentator. It handles the setup of model parameters and preferences.
+
+    Attributes:
+        VERSION (str): Version of the EmotionSegmentator.
+        CREATED_BY (str): Creator information.
+
+    Methods:
+        cfg_info(): Prints the detailed information about configuration options.
+        check_default(): Prints the default configuration settings.
+    """
     VERSION = '0.1.0'
     CREATED_BY = 'jasonheesanglee\thttps://github.com/jasonheesanglee'
 
@@ -50,6 +61,13 @@ class EmotionSegmentatorConfig:
         """)
 
     def __init__(self, cfg=None):
+        """
+        Initializes the EmotionSegmentatorConfig with default or user-provided settings.
+
+        Args:
+            cfg (dict, optional): A dictionary containing configuration settings.
+                                  If provided, it overrides the default settings.
+        """
         default_cfg = {
             'model_name': 'hun3359/klue-bert-base-sentiment',
             'sub_model_name': 'WhitePeak/bert-base-cased-Korean-sentiment',

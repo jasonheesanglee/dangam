@@ -59,7 +59,44 @@ neut_tag = [17, 28, 29, 31, 33, 42]
 
 # noinspection PyTypeChecker
 class EmotionSegmentator:
-    VERSION = '0.1.0'
+    """
+    The EmotionSegmentator class is designed for emotion analysis in textual data. It leverages advanced NLP models
+    to segment general and specific emotions at both sentence and word levels.
+
+    Attributes:
+        tokenizer (AutoTokenizer): Tokenizer for processing input text.
+        model (AutoModelForSequenceClassification): Primary model for emotion classification.
+        sub_tokenizer (AutoTokenizer): Secondary tokenizer for enhanced emotion analysis.
+        sub_model (AutoModelForSequenceClassification): Secondary model for detailed emotion classification.
+        word_senti_model (AutoModel): Model for word-level sentiment analysis.
+        word_senti_tokenizer (AutoTokenizer): Tokenizer for word-level sentiment analysis.
+        sep_token (str): Separator token used in text processing.
+        emotion_label (dict): Dictionary mapping emotion indices to labels.
+        truncation (bool): Flag to enable or disable truncation in text processing.
+        pos_tag, neut_tag, neg_tag (list): Lists of tags for positive, neutral, and negative emotions.
+        ori_emo_col, text_col, default_emo_col, normalized_emo_col, sent_emo_col, sent_spec_emo_col (str): Column names for various data attributes.
+
+    Methods:
+        cfg_info(): Displays configuration information.
+        check_default(): Checks and prints default configuration settings.
+        chunk_text(text, max_length): Breaks text into chunks for processing.
+        get_emotion(...): Determines the overall emotion of a sentence.
+        match_rate_calc(df): Calculates the match rate of predicted emotions against original emotions.
+        get_word_embeddings(sentence, max_length): Retrieves word embeddings from a sentence.
+        get_sentence_embedding(sentence, max_length): Computes the sentence embedding.
+        get_emotion_embedding(emotion): Computes the embedding for a general emotion.
+        get_specific_emotion_embedding(specific_emotion): Computes the embedding for a specific emotion.
+        calculate_vector_differences(sentence, emotion, specific_emotion): Calculates the emotional dissimilarities in a sentence.
+        normalize_sentiment_scores(dissimilarities): Normalizes sentiment scores to a standard range.
+        assign_word_sentiment_scores(sentence, normalized_scores): Assigns sentiment scores to each word in a sentence.
+        word_segmentator(sentence, emotion, specific_emotion): Segments and assigns emotions to words in a sentence.
+        noun_emotions(sentence, noun_list): Analyzes and categorizes emotions associated with specific nouns.
+
+    Usage:
+        - Initialize the class.
+        - Use its methods for emotion segmentation and analysis in text.
+    """
+    VERSION = '0.1.1'
     CREATED_BY = 'jasonheesanglee\thttps://github.com/jasonheesanglee'
 
     def __init__(self):
@@ -67,9 +104,7 @@ class EmotionSegmentator:
 CAUTION
 This logic performs the best with the models that are pretrained with
 AI HUB Dataset https://aihub.or.kr/aihubdata/data/view.do?currMenu=115&topMenu=100&aihubDataSe=realm&dataSetSn=86
-or any Dataset that has 60 sentiment tags listed as described in
-\thttps://huggingface.co/hun3359/klue-bert-base-sentiment/blob/main/config.json
-
+or any Dataset that has 60 sentiment tags listed as described in https://huggingface.co/hun3359/klue-bert-base-sentiment/blob/main/config.json\n
 You can also modify configuration by calling EmotionSegmentatorConfig()
         '''
               )
@@ -93,6 +128,10 @@ You can also modify configuration by calling EmotionSegmentatorConfig()
         self.sent_spec_emo_col = cfg.sent_spec_emo_col
 
     def cfg_info(self):
+        """
+        Prints the current configuration information of the EmotionSegmentator.
+        Includes details about the models used, text and emotion column names, and other settings.
+        """
         print(f"""
 'model_name' - The model that will run through the first loop of the sentence segmentation.
 'sub_model_name' - The model that will run through the second loop of the sentence segmentation.
@@ -133,6 +172,17 @@ You can also modify configuration by calling EmotionSegmentatorConfig()
         """)
 
     def chunk_text(self, text, max_length=512):
+        """
+        Splits a given text into chunks for processing.
+        Ensures that each chunk is within the specified maximum length.
+
+        Args:
+            text (str): The text to be chunked.
+            max_length (int): Maximum length of each text chunk.
+
+        Yields:
+            str: Chunks of the original text.
+        """
         tokens = self.tokenizer.tokenize(text)
         chunk_size = max_length - 2
         for i in range(0, len(tokens), chunk_size):
@@ -144,6 +194,16 @@ You can also modify configuration by calling EmotionSegmentatorConfig()
                     gpt_specific_emotion,
                     sentence
                     ):
+        """
+        Determines the overall emotion of a given sentence by analyzing it in chunks.
+        Considers both the general and specific emotions to enhance accuracy.
+
+        Args:
+            original_emotion, default_specific_emotion, gpt_specific_emotion, sentence: Parameters defining the sentence and its emotions.
+
+        Returns:
+            tuple: A tuple containing the general emotion and the specific emotion of the sentence.
+        """
         chunks = list(self.chunk_text(sentence))
         sum_prob = None
         num_chunks = 0
@@ -251,6 +311,16 @@ You can also modify configuration by calling EmotionSegmentatorConfig()
                 return emotion, specific_emotion
 
     def match_rate_calc(self, df):
+        """
+        Calculates the accuracy of emotion predictions in a dataframe by comparing predicted emotions
+        with their original annotations.
+
+        Args:
+            df (DataFrame): A pandas DataFrame containing text data along with original and predicted emotion annotations.
+
+        Returns:
+            float: The match rate percentage indicating the accuracy of emotion predictions.
+        """
         mat = 0
         unmat = 0
         for row_num in tqdm(range(df.shape[0])):
@@ -272,6 +342,16 @@ You can also modify configuration by calling EmotionSegmentatorConfig()
         return match_rate
 
     def get_word_embeddings(self, sentence, max_length=512):
+        """
+        Retrieves word embeddings for a given sentence using the specified tokenizer and model.
+
+        Args:
+            sentence (str): The sentence for which to get word embeddings.
+            max_length (int): Maximum length for tokenization.
+
+        Returns:
+            tuple: A tuple containing word embeddings and offset mappings.
+        """
         inputs = self.word_senti_tokenizer(sentence, return_tensors="pt", max_length=max_length,
                                            truncation=self.truncation, padding='max_length',
                                            return_offsets_mapping=True)
@@ -282,6 +362,16 @@ You can also modify configuration by calling EmotionSegmentatorConfig()
         return embeddings, offset_mapping
 
     def get_sentence_embedding(self, sentence, max_length=512):
+        """
+        Computes the embedding of a sentence by averaging the embeddings of its constituent tokens.
+
+        Args:
+            sentence (str): The sentence to compute embedding for.
+            max_length (int): Maximum length for tokenization.
+
+        Returns:
+            torch.Tensor: The computed sentence embedding.
+        """
         inputs = self.word_senti_tokenizer(sentence, return_tensors="pt", max_length=max_length,
                                            truncation=self.truncation,
                                            padding="max_length")
@@ -291,19 +381,70 @@ You can also modify configuration by calling EmotionSegmentatorConfig()
         sentence_embedding = outputs.last_hidden_state[:, 0, :]
         return sentence_embedding
 
-    def get_emotion_embedding(self, emotion_label, emotion_spec_label):
-        inputs = self.word_senti_tokenizer(emotion_label + ' ' + emotion_spec_label, return_tensors='pt', padding=True,
+    def get_emotion_embedding(self, emotion):
+        """
+        Computes the embedding for a general emotion label.
+
+        Args:
+            emotion (str): The emotion label for which to compute the embedding.
+
+        Returns:
+            torch.Tensor: The embedding of the specified emotion.
+        """
+        inputs = self.word_senti_tokenizer(emotion, return_tensors='pt', padding=True,
                                            truncation=self.truncation)
         with torch.no_grad():
             outputs = self.word_senti_model(**inputs)
         return outputs.last_hidden_state.mean(dim=1)
 
-    def calculate_vector_differences(self, sentence, emotion_label):
+    def get_specific_emotion_embedding(self, specific_emotion):
+        """
+        Computes the embedding for a specific emotion label.
+
+        Args:
+            specific_emotion (str): The specific emotion label for which to compute the embedding.
+
+        Returns:
+            torch.Tensor: The embedding of the specified specific emotion.
+        """
+        inputs = self.word_senti_tokenizer(specific_emotion, return_tensors='pt', padding=True,
+                                           truncation=self.truncation)
+        with torch.no_grad():
+            outputs = self.word_senti_model(**inputs)
+        return outputs.last_hidden_state.mean(dim=1)
+
+    def calculate_vector_differences(self, sentence, emotion, specific_emotion):
+        """
+        Calculates vector differences (dissimilarities) between words in a sentence and a combined emotion embedding.
+
+        Args:
+            sentence (str): The sentence for analysis.
+            emotion (str): General emotion label for the sentence.
+            specific_emotion (str): Specific emotion label for the sentence.
+
+        Returns:
+            list: A list of dissimilarity scores for each word in the sentence.
+        """
         word_embeddings, offset_mapping = self.get_word_embeddings(sentence)
         sentence_embedding = self.get_sentence_embedding(sentence)
-        emotion_embedding = self.get_emotion_embedding(emotion_label)
+        emotion_embedding = self.get_emotion_embedding(emotion)
+        specific_emotion_embedding = self.get_emotion_embedding(specific_emotion)
+
+        general_alignment = F.cosine_similarity(sentence_embedding, emotion_embedding, dim=1)
+        specific_alignment = F.cosine_similarity(sentence_embedding, specific_emotion_embedding, dim=1)
+
         alignment_threshold = 0.7  # 0.75 ~ 0.7
-        combined_embedding = (sentence_embedding - emotion_embedding) / 2
+        emotion_threshold = 0.3  # 0.75 ~ 0.7
+
+        general_weight = 0.5 if general_alignment.item() > emotion_threshold else 0.75
+        specific_weight = 0.1 if specific_alignment.item() > emotion_threshold else 0.23
+        sentence_weight = 1 - (general_weight + specific_weight)
+
+        combined_embedding = (emotion_embedding * general_weight -
+                              sentence_embedding * sentence_weight +
+                              specific_emotion_embedding * specific_weight) / 2
+
+        # combined_embedding = (sentence_embedding - emotion_embedding) / 2
 
         dissimilarities = []
 
@@ -319,6 +460,15 @@ You can also modify configuration by calling EmotionSegmentatorConfig()
         return dissimilarities
 
     def normalize_sentiment_scores(self, dissimilarities):
+        """
+        Normalizes sentiment dissimilarity scores to a standard range for consistency.
+
+        Args:
+            dissimilarities (list): A list of dissimilarity scores.
+
+        Returns:
+            list: Normalized sentiment scores.
+        """
         scores = np.array(dissimilarities)
         mean = np.mean(scores)
         std = np.std(scores)
@@ -332,6 +482,16 @@ You can also modify configuration by calling EmotionSegmentatorConfig()
         return normalized_scores.tolist()
 
     def assign_word_sentiment_scores(self, sentence, normalized_scores):
+        """
+        Assigns sentiment scores to each word in a sentence based on normalized dissimilarities.
+
+        Args:
+            sentence (str): The sentence to assign word sentiment scores.
+            normalized_scores (list): Normalized sentiment scores for each token in the sentence.
+
+        Returns:
+            dict: A dictionary mapping each word in the sentence to its sentiment score.
+        """
         encoded = self.word_senti_tokenizer.encode_plus(sentence, return_tensors='pt', truncation=self.truncation,
                                                         padding='max_length', max_length=512)
         tokenized_words = self.word_senti_tokenizer.convert_ids_to_tokens(encoded['input_ids'][0])
@@ -360,15 +520,36 @@ You can also modify configuration by calling EmotionSegmentatorConfig()
 
         return word_scores
 
-    def word_segmentator(self, sentence):
+    def word_segmentator(self, sentence, emotion, specific_emotion):
+        """
+        Segments a sentence and assigns emotions to each word based on the overall sentence emotion and specific emotion.
+
+        Args:
+            sentence (str): The sentence for segmentation.
+            emotion (str): The general emotion of the sentence.
+            specific_emotion (str): The specific emotion of the sentence.
+
+        Returns:
+            dict: A dictionary mapping each word in the sentence to its assigned emotion.
+        """
         pattern = '[^ㄱ-ㅣ가-힣a-zA-Z0-9+]'
         sentence = re.sub(pattern, ' ', sentence)
-        dissimilarities = self.calculate_vector_differences(sentence)
+        dissimilarities = self.calculate_vector_differences(sentence, emotion, specific_emotion)
         norm_senti_score = self.normalize_sentiment_scores(dissimilarities)
         word_sentiment_scores = self.assign_word_sentiment_scores(sentence, norm_senti_score)
         return word_sentiment_scores
 
     def noun_emotions(self, sentence, noun_list):
+        """
+        Analyzes emotions associated with specific nouns within a sentence.
+
+        Args:
+            sentence (str): The sentence containing the nouns for emotion analysis.
+            noun_list (list): A list of nouns to analyze within the sentence.
+
+        Returns:
+            dict: A dictionary categorizing nouns into positive, neutral, and negative based on their associated emotions.
+        """
         word_emo_list = self.word_segmentator(sentence)
 
         pos = defaultdict(list)
