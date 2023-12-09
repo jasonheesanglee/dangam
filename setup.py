@@ -31,7 +31,7 @@ setup(
 
         'Programming Language :: Python :: 3',
 
-        'Programming Language :: Python :: 3.10 ::',
+        'Programming Language :: Python :: 3.10',
 
         'Operating System :: OS Independent',  # Use specific OS classifiers if your package is OS-dependent
 
