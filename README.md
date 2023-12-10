@@ -1,7 +1,7 @@
-[![license](https://img.shields.io/badge/License-MIT-brightgreen.svg)](https://github.com/jasonheesanglee/dangam/blob/master/LICENSE)
-[![PyPI version](https://badge.fury.io/py/dangam.svg)](https://badge.fury.io/py/dangam)
-[![PyPI pyversions](https://img.shields.io/pypi/pyversions/dangam.svg)](https://pypi.python.org/pypi/dangam/)
-[![PyPI status](https://img.shields.io/pypi/status/dangam.svg)](https://pypi.python.org/pypi/dangam/)
+[![license](https://img.shields.io/badge/License-MIT-brightgreen.svg)](https://github.com/jasonheesanglee/DanGam/blob/master/LICENSE)
+[![PyPI version](https://badge.fury.io/py/DanGam.svg)](https://badge.fury.io/py/DanGam)
+[![PyPI pyversions](https://img.shields.io/pypi/pyversions/DanGam.svg)](https://pypi.python.org/pypi/DanGam/)
+[![PyPI status](https://img.shields.io/pypi/status/DanGam.svg)](https://pypi.python.org/pypi/DanGam/)
 
 # DanGam
 
