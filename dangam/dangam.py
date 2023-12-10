@@ -7,27 +7,12 @@ from collections import defaultdict
 from .config import DanGamConfig
 from transformers import AutoTokenizer, AutoModelForSequenceClassification, AutoModel
 
-cfg = {
-    'model_name': 'hun3359/klue-bert-base-sentiment',
-    'sub_model_name': 'WhitePeak/bert-base-cased-Korean-sentiment',
-    'word_senti_model_name': 'keonju/chat_bot',
-    'text_col': 'text',
-    'ori_emo_col': 'posneg',
-    'default_emo_col': 'default_emotion',
-    'normalized_emo_col': 'gpt_emotion',
-    'truncation': True,
-    'sent_emo_col': 'klue_emo',
-    'sent_spec_emo_col': 'klue_specific_emo',
-    'max_length': 512
-}
-cfg = DanGamConfig(cfg)
-
-
 class DotDict(dict):
     """dot.notation access to dictionary attributes"""
     __getattr__ = dict.get
     __setattr__ = dict.__setitem__
     __delattr__ = dict.__delitem__
+
 
 
 emotion_labels = {
@@ -41,18 +26,36 @@ emotion_labels = {
     28: "cautious", 29: "nervous", 30: "wound", 31: "jealous",
     32: "betrayed", 33: "isolated", 34: "shocked", 35: "poor",
     36: "victimized", 37: "unfair", 38: "afflicted", 39: "abandoned",
-    40: "bewildered", 41: "beleaguered", 42: "self-conscious", 43: "lonely",
+    40: "bewildered", 41: "beleaguered", 42: "self conscious", 43: "lonely",
     44: "inferiority", 45: "guilty", 46: "ashamed", 47: "abominable",
     48: "pathetic", 49: "baffled", 50: "joyful", 51: "grateful",
     52: "trusting", 53: "comfortable", 54: "satisfying", 55: "thrilled",
     56: "relaxed", 57: "relieved", 58: "excited", 59: "confident"
 }
 
-neg_tag = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9,
-           10, 11, 12, 13, 14, 15, 16, 18, 19,
+emotion_labels_ko = {
+    "rage": "분노", "whining": "툴툴대는", 'frustrated': "좌절한", 'irritated': "짜증내는",
+    'defensive': "방어적인", 'spiteful': "악의적인", 'restless': "안달하는", 'disgusted': "구역질 나는",
+    'displeased': "노여워하는", 'annoyed': "성가신", 'sad': "슬픔", 'disappointed': "실망한",
+    'heartbreaking': "비통한", 'regret': "후회되는", 'depressed': "우울한", 'paralyzed': "마비된",
+    'pessimistic': "염세적인", 'tearful': "눈물이 나는", 'dejected': "낙담한", 'disillusioned': "환멸을 느끼는",
+    'anxious': "불안", 'frightened': "두려운", 'stressful': "스트레스 받는", 'vulnerable': "취약한",
+    'confused': "혼란스러운", 'embarrassing': "당혹스러운", 'skeptical': "회의적인", 'worried': "걱정스러운",
+    'cautious': "조심스러운", 'nervous': "초조한", 'wound': "상처", 'jealous': "질투하는",
+    'betrayed': "배신당한", 'isolated': "고립된", 'shocked': "충격 받은", 'poor': "가난한 불우한",
+    'victimized': "희생된", 'unfair': "억울한", 'afflicted': "괴로워하는", 'abandoned': "버려진",
+    'bewildered': "당황", 'beleaguered': "고립된 당황한)", 'self conscious': "남의 시선을 의식하는", 'lonely': "외로운",
+    'inferiority': "열등감", "guilty": "죄책감의", 'ashamed': "부끄러운", 'abominable': "혐오스러운",
+    'pathetic': "한심한", 'baffled': "혼란스러운 (당황한)", 'joyful': "기쁨", 'grateful': "감사하는",
+    'trusting': "신뢰하는", 'comfortable': "편안한", 'satisfying': "만족스러운", 'thrilled': "흥분",
+    'relaxed': "느긋한", 'relieved': "안도하는", 'excited': "신이 난", 'confident': "자신하는"
+  }
+
+neg_tag = [ 0,  1,  2,  3,  4,  5,  6,  7,  8,  9,
+           10, 11, 12, 13, 14, 15, 16,     18, 19,
            20, 21, 22, 23, 24, 25, 26, 27,
-           30, 32, 34, 35, 36, 37, 38, 39,
-           40, 41, 43, 44, 45, 46, 47, 48, 49]
+           30,     32,     34, 35, 36, 37, 38, 39,
+           40, 41,     43, 44, 45, 46, 47, 48, 49]
 pos_tag = [50, 51, 52, 53, 54, 55, 56, 57, 58, 59]
 neut_tag = [17, 28, 29, 31, 33, 42]
 
@@ -97,10 +100,10 @@ class DanGam:
         - Initialize the class.
         - Use its methods for emotion segmentation and analysis in text.
     """
-    VERSION = '0.1.1'
+    VERSION = '0.0.10'
     CREATED_BY = 'jasonheesanglee\thttps://github.com/jasonheesanglee'
 
-    def __init__(self):
+    def __init__(self, cfg=None):
         print('''
 CAUTION
 This logic performs the best with the models that are pretrained with
@@ -108,25 +111,18 @@ AI HUB Dataset https://aihub.or.kr/aihubdata/data/view.do?currMenu=115&topMenu=1
 or any Dataset that has 60 sentiment tags listed as described in https://huggingface.co/hun3359/klue-bert-base-sentiment/blob/main/config.json\n
 You can also modify configuration by calling DanGamConfig()
         '''
-              )
-        self.tokenizer = AutoTokenizer.from_pretrained(cfg.model_name)
-        self.model = AutoModelForSequenceClassification.from_pretrained(cfg.model_name)
-        self.sub_tokenizer = AutoTokenizer.from_pretrained(cfg.sub_model_name)
-        self.sub_model = AutoModelForSequenceClassification.from_pretrained(cfg.sub_model_name)
-        self.word_senti_model = AutoModel.from_pretrained(cfg.sub_model_name)
-        self.word_senti_tokenizer = AutoTokenizer.from_pretrained(cfg.sub_model_name)
+)
+        if cfg is not None:
+            self.cfg = DotDict(DanGamConfig(cfg))
+        else:
+            self.cfg = DotDict(DanGamConfig())
+        self.initialize_models()
         self.sep_token = ' >>>> '
         self.emotion_label = emotion_labels
-        self.truncation = cfg.truncation
+        self.emotion_label_ko = emotion_labels
         self.pos_tag = pos_tag
         self.neut_tag = neut_tag
         self.neg_tag = neg_tag
-        self.ori_emo_col = cfg.ori_emo_col
-        self.text_col = cfg.text_col
-        self.default_emo_col = cfg.default_emo_col
-        self.normalized_emo_col = cfg.normalized_emo_col
-        self.sent_emo_col = cfg.sent_emo_col
-        self.sent_spec_emo_col = cfg.sent_spec_emo_col
 
     def cfg_info(self):
         """
@@ -134,45 +130,67 @@ You can also modify configuration by calling DanGamConfig()
         Includes details about the models used, text and emotion column names, and other settings.
         """
         print(f"""
-'model_name' - The model that will run through the first loop of the sentence segmentation.
-'sub_model_name' - The model that will run through the second loop of the sentence segmentation.
-'text_col' - The name of the column that you want to segment the emotion.
-'default_emo_col' - Pre-labeled emotion by user.
+'model_name' - The model that will run through the first loop of the sentence segmentation.\n
+'sub_model_name' - The model that will run through the second loop of the sentence segmentation.\n
+'word_senti_model_name' - The model that will run through the second loop of the sentence segmentation.\n
+'text_col' - The name of the column that you want to segment the emotion.\n
+'default_emo_col' - Pre-labeled emotion by user.\n
 'ori_emo_col' - Pre-segmented emotions by user.
 \tPerforms the best if this section is segmented into 'positive', 'negative', 'neutral'.
-\tUsed for accuracy evaluation.
+\tUsed for accuracy evaluation.\n
 'normalized_emo_col' - Normalized pre-labeled emotion.
 \tPerforms the best if this section is in English.
 \tDirectly used from the second loop, since it will only segment positive, negative, neutral.
-\tNot into 60 different emotions.
-'truncation' - Bool : Turning on and off Truncation throughout the module. 
-'sent_emo_col' - The column name of sentence emotion (pos/neg/neut) you want this module to set.
-'sent_spec_emo_col' - The column name of sentence emotion (pos/neg/neut) you want this module to set.
-'max_length' - Max length for chunk_text
+\tNot into 60 different emotions.\n
+'truncation' - Bool : Turning on and off Truncation throughout the module.\n 
+'sent_emo_col' - The column name of sentence emotion (pos/neg/neut) you want this module to set.\n
+'sent_spec_emo_col' - The column name of sentence emotion (pos/neg/neut) you want this module to set.\n
+'max_length' - Max length for chunk_text.
         """)
+
+    def initialize_models(self):
+
+        self.tokenizer = AutoTokenizer.from_pretrained(self.cfg.model_name)
+        self.model = AutoModelForSequenceClassification.from_pretrained(self.cfg.model_name)
+        self.sub_tokenizer = AutoTokenizer.from_pretrained(self.cfg.sub_model_name)
+        self.sub_model = AutoModelForSequenceClassification.from_pretrained(self.cfg.sub_model_name)
+        self.word_senti_model = AutoModel.from_pretrained(self.cfg.word_senti_model_name)
+        self.word_senti_tokenizer = AutoTokenizer.from_pretrained(self.cfg.word_senti_model_name)
+        self.truncation = self.cfg.truncation
+        self.ori_emo_col = self.cfg.original_emotion_column
+        self.text_col = self.cfg.text_col
+        self.default_emo_col = self.cfg.default_emotion_col
+        self.normalized_emo_col = self.cfg.normalized_emotion_col
+        self.sent_emo_col = self.cfg.sentence_emotion_col
+        self.sent_spec_emo_col = self.cfg.sentence_specific_emotion_col
+        self.max_length = self.cfg.max_length
+
+    def update_config(self, new_config):
+        self.config = DanGamConfig(new_config)
+        self.initialize_models()
 
     def check_default(self):
         print("""
 'model_name': 'hun3359/klue-bert-base-sentiment',
-\tBetter if you stick to this. This is one of the only options that segments the sentences into 60 sentiment labels.
-'sub_model_name': 'WhitePeak/bert-base-cased-Korean-sentiment'
+\tBetter if you stick to this. This is one of the only options that segments the sentences into 60 sentiment labels.\n
+'sub_model_name': 'WhitePeak/bert-base-cased-Korean-sentiment'\n
 'text_col': 'text'
-\tYou need to modify this if your col name is not 'text'.
-'ori_emo_col': 'posneg'
-\tYou need to modify this if your col name is not 'posneg'.
+\tYou need to modify this if your col name is not 'text'.\n
+'original_emotion_column': 'posneg'
+\tYou need to modify this if your col name is not 'posneg'.\n
 'default_emo_col': 'default_emotion'
-\tYou need to modify this if your col name is not 'default_emotion'.
+\tYou need to modify this if your col name is not 'default_emotion'.\n
 'normalized_emo_col': 'gpt_emotion'
-\tYou need to modify this if your col name is not 'gpt_emotion'.
-'truncation': True,
-'sent_emo_col': 'klue_emo'
-\tYou can leave it as it is, change it, as you wish.
+\tYou need to modify this if your col name is not 'gpt_emotion'.\n
+'truncation': True,\n
+'sent_emo_col': 'klue_emo'\n
+\tYou can leave it as it is, change it, as you wish.\n
 'sent_spec_emo_col': 'klue_specific_emo'
-\tYou can leave it as it is, change it, as you wish.
+\tYou can leave it as it is, change it, as you wish.\n
 'max_length': 512
         """)
 
-    def chunk_text(self, text, max_length=512):
+    def chunk_text(self, text: str, max_length=512):
         """
         Splits a given text into chunks for processing.
         Ensures that each chunk is within the specified maximum length.
@@ -190,9 +208,9 @@ You can also modify configuration by calling DanGamConfig()
             yield ' '.join(tokens[i:i + chunk_size])
 
     def get_emotion(self,
-                    original_emotion,
-                    default_specific_emotion,
-                    gpt_specific_emotion,
+                    original_emotion: str,
+                    default_specific_emotion: str,
+                    gpt_specific_emotion: str,
                     sentence
                     ):
         """

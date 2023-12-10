@@ -17,7 +17,7 @@ class DanGamConfig:
         cfg_info(): Prints the detailed information about configuration options.
         check_default(): Prints the default configuration settings.
     """
-    VERSION = '0.1.0'
+    VERSION = '0.0.10'
     CREATED_BY = 'jasonheesanglee\thttps://github.com/jasonheesanglee'
 
     def cfg_info(self) -> None:
@@ -68,33 +68,33 @@ class DanGamConfig:
             cfg (dict, optional): A dictionary containing configuration settings.
                                   If provided, it overrides the default settings.
         """
-        default_cfg = {
+        config = {
             'model_name': 'hun3359/klue-bert-base-sentiment',
             'sub_model_name': 'WhitePeak/bert-base-cased-Korean-sentiment',
-            'word_senti_model_name': 'keonju/chat_bot',
+            'word_senti_model_name': 'WhitePeak/bert-base-cased-Korean-sentiment',
             'text_col': 'text',
-            'ori_emo_col': 'posneg',
-            'default_emo_col': 'default_emotion',
-            'normalized_emo_col': 'gpt_emotion',
+            'original_emotion_column': 'posneg',
+            'default_emotion_col': 'default_emotion',
+            'normalized_emotion_col': 'gpt_emotion',
+            'sentence_emotion_col': 'klue_emo',
+            'sentence_specific_emotion_col': 'klue_specific_emo',
             'truncation': True,
-            'sent_emo_col': 'klue_emo',
-            'sent_spec_emo_col': 'klue_specific_emo',
             'max_length': 512
         }
 
         if cfg is not None:
             if isinstance(cfg, dict):
-                default_cfg.update(cfg)
-        default_cfg = DotDict(default_cfg)
+                config.update(cfg)
+        default_cfg = config
 
-        self.model_name = default_cfg.model_name
-        self.sub_model_name = default_cfg.sub_model_name
-        self.word_senti_model_name = default_cfg.word_senti_model_name
-        self.text_col = default_cfg.text_col
-        self.ori_emo_col = default_cfg.ori_emo_col
-        self.normalized_emo_col = default_cfg.normalized_emo_col
-        self.default_emo_col = default_cfg.default_emo_col
-        self.sent_emo_col = default_cfg.sent_emo_col
-        self.sent_spec_emo_col = default_cfg.sent_spec_emo_col
-        self.truncation = default_cfg.truncation
-        self.max_length = default_cfg.max_length
+        self.model_name = default_cfg['model_name']
+        self.sub_model_name = default_cfg['sub_model_name']
+        self.word_senti_model_name = default_cfg['word_senti_model_name']
+        self.text_col = default_cfg['text_col']
+        self.original_emotion_column = default_cfg['original_emotion_column']
+        self.normalized_emotion_col = default_cfg['normalized_emotion_col']
+        self.default_emo_col = default_cfg['default_emotion_col']
+        self.sentence_emotion_col = default_cfg['sentence_emotion_col']
+        self.sentence_specific_emotion_col = default_cfg['sentence_specific_emotion_col']
+        self.truncation = default_cfg['truncation']
+        self.max_length = default_cfg['max_length']
