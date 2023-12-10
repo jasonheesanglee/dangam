@@ -60,6 +60,7 @@ class DanGamConfig:
 'max_length': 512
         """)
 
+
     def __init__(self, cfg=None):
         """
         Initializes the DanGamConfig with default or user-provided settings.
@@ -98,3 +99,21 @@ class DanGamConfig:
         self.sentence_specific_emotion_col = default_cfg['sentence_specific_emotion_col']
         self.truncation = default_cfg['truncation']
         self.max_length = default_cfg['max_length']
+
+    def get_config(self):
+        """
+        Returns the current configuration as a dictionary.
+        """
+        return {
+            'model_name': self.model_name,
+            'sub_model_name': self.sub_model_name,
+            'word_senti_model': self.word_senti_model_name,
+            'original_emotion_column' : self.original_emotion_column,
+            'text_col' : self.text_col,
+            'default_emotion_col' : self.default_emo_col,
+            'normalized_emotion_col' : self.normalized_emotion_col,
+            'sentence_emotion_col' : self.sentence_emotion_col,
+            'sentence_specific_emotion_col' : self.sentence_specific_emotion_col,
+            'truncation' : self.truncation,
+            'max_length' : self.max_length
+        }

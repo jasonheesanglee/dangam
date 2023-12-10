@@ -7,12 +7,12 @@ from collections import defaultdict
 from .config import DanGamConfig
 from transformers import AutoTokenizer, AutoModelForSequenceClassification, AutoModel
 
+
 class DotDict(dict):
     """dot.notation access to dictionary attributes"""
     __getattr__ = dict.get
     __setattr__ = dict.__setitem__
     __delattr__ = dict.__delitem__
-
 
 
 emotion_labels = {
@@ -49,13 +49,13 @@ emotion_labels_ko = {
     'pathetic': "한심한", 'baffled': "혼란스러운 (당황한)", 'joyful': "기쁨", 'grateful': "감사하는",
     'trusting': "신뢰하는", 'comfortable': "편안한", 'satisfying': "만족스러운", 'thrilled': "흥분",
     'relaxed': "느긋한", 'relieved': "안도하는", 'excited': "신이 난", 'confident': "자신하는"
-  }
+}
 
-neg_tag = [ 0,  1,  2,  3,  4,  5,  6,  7,  8,  9,
-           10, 11, 12, 13, 14, 15, 16,     18, 19,
+neg_tag = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9,
+           10, 11, 12, 13, 14, 15, 16, 18, 19,
            20, 21, 22, 23, 24, 25, 26, 27,
-           30,     32,     34, 35, 36, 37, 38, 39,
-           40, 41,     43, 44, 45, 46, 47, 48, 49]
+           30, 32, 34, 35, 36, 37, 38, 39,
+           40, 41, 43, 44, 45, 46, 47, 48, 49]
 pos_tag = [50, 51, 52, 53, 54, 55, 56, 57, 58, 59]
 neut_tag = [17, 28, 29, 31, 33, 42]
 
@@ -104,6 +104,12 @@ class DanGam:
     CREATED_BY = 'jasonheesanglee\thttps://github.com/jasonheesanglee'
 
     def __init__(self, cfg=None):
+        """
+        Initialize DanGam with default or custom configuration.
+
+        Args:
+            cfg (dict, optional): Custom configuration settings.
+        """
         print('''
 CAUTION
 This logic performs the best with the models that are pretrained with
@@ -111,7 +117,7 @@ AI HUB Dataset https://aihub.or.kr/aihubdata/data/view.do?currMenu=115&topMenu=1
 or any Dataset that has 60 sentiment tags listed as described in https://huggingface.co/hun3359/klue-bert-base-sentiment/blob/main/config.json\n
 You can also modify configuration by calling DanGamConfig()
         '''
-)
+              )
         if cfg is not None:
             self.cfg = DotDict(DanGamConfig(cfg))
         else:
@@ -149,7 +155,9 @@ You can also modify configuration by calling DanGamConfig()
         """)
 
     def initialize_models(self):
-
+        """
+        Initialize models based on the current configuration.
+        """
         self.tokenizer = AutoTokenizer.from_pretrained(self.cfg.model_name)
         self.model = AutoModelForSequenceClassification.from_pretrained(self.cfg.model_name)
         self.sub_tokenizer = AutoTokenizer.from_pretrained(self.cfg.sub_model_name)
@@ -166,7 +174,13 @@ You can also modify configuration by calling DanGamConfig()
         self.max_length = self.cfg.max_length
 
     def update_config(self, new_config):
-        self.config = DanGamConfig(new_config)
+        """
+        Update the configuration of DanGam and reinitialize components as necessary.
+
+        Args:
+            new_cfg (dict): A dictionary containing the new configuration settings.
+        """
+        self.cfg = DanGamConfig(new_config)
         self.initialize_models()
 
     def check_default(self):
@@ -188,7 +202,14 @@ You can also modify configuration by calling DanGamConfig()
 'sent_spec_emo_col': 'klue_specific_emo'
 \tYou can leave it as it is, change it, as you wish.\n
 'max_length': 512
-        """)
+        """
+              )
+
+    def check_config(self):
+        """
+        Returns the current configuration of DanGam as a dictionary.
+        """
+        return self.cfg.get_config()
 
     def chunk_text(self, text: str, max_length=512):
         """
