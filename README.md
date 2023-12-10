@@ -12,7 +12,7 @@ The name DanGam came from the abbreviation of "Word-Emotion" in Korean (단어-�
 ## Installation
 DanGam can be easily installed via pip. Simply run the following command in your terminal:<br>
 ```shell
-pip install dangam
+pip install DanGam
 ```
 
 ## Features
@@ -23,7 +23,7 @@ pip install dangam
 
 ## Quick Start
 ```
-from dangam import DanGam, DanGamConfig
+from dangam import DanGam
 ```
 
 ```shell
@@ -63,8 +63,10 @@ print(words_emotion)
 ```
 
 ## Configuration
-DanGam allows customization through the EmotionSegmentatorConfig class.<br>
+DanGam allows a wide range of degrees of customization. ~~(at least trying)~~
+
 You can modify various settings like model names, column names, etc., to fit your specific needs.
+
 
 ## Core Functionality
 The primary objective of `word_segmentator` is to assign sentiment scores to each word in a given sentence.<br>These scores are not just arbitrary numbers; they represent how closely each word aligns with the overall emotional tone of the sentence.<br>This process involves several steps, starting from embedding extraction to sentiment score normalization.
@@ -81,7 +83,7 @@ Post-calculation, the sentiment scores undergo normalization, a crucial step to 
 ## Contributing
 Contributions to DanGam are welcome!<br>
 Whether it's feature requests, bug reports, or code contributions, please feel free to contribute.<br>
-<small style="color: grey;">If you are interested in hiring me, please feel free to contact <a href="mailto:jason.heesang.lee96@gmail.com">jason.heesang.lee96@gmail.com</a></small>
+<sub>If you are interested in hiring me, please feel free to contact <a href="mailto:jason.heesang.lee96@gmail.com">jason.heesang.lee96@gmail.com</a>
 
 ## License
 Dangam is released under MIT License, making it suitable for both personal and commercial use.
