@@ -89,6 +89,7 @@ You can modify various settings like model names, column names, etc., to fit you
   - Returns the current configuration of DanGam as a dictionary.<br><br>
 `update_config(config)`:
   - Update the configuration of DanGam and reinitialize components as necessary.<br><br>
+  
   <details>
     <summary>Lists of modifiable configuration:</summary>
       
@@ -155,15 +156,34 @@ You can modify various settings like model names, column names, etc., to fit you
 ## Core Functionality
 The primary objective of `word_segmentator` is to assign sentiment scores to each word in a given sentence.<br>
 These scores are not just arbitrary numbers; they represent how closely each word aligns with the overall emotional tone of the sentence.<br>This process involves several steps, starting from embedding extraction to sentiment score normalization.<br><br>
-`get_emotion(sentence, origianl_emotion, default_specific_emotion, normalized_emotion)`:
-  -  Determines the overall emotion of a given sentence by analyzing it in chunks.
-  -  Considers both the general and specific emotions to enhance accuracy.<br><br>
-`match_rate_calc(df)`:
-  - Calculates the accuracy of emotion predictions in a dataframe by comparing predicted emotions with their original annotations.<br><br>
-`word_emotions(sentence, emotion, specific_emotion)`:
-  - Segments a sentence and assigns emotions to each word based on the overall sentence emotion and specific emotion.<br><br>
-`noun_emotions(sentence, noun_list, count)`:
-  - Analyzes emotions associated with specific nouns within a sentence.
+
+`get_emotion(sentence, origianl_emotion, default_specific_emotion, normalized_emotion)`:<br>
+  Determines the overall emotion of a given sentence by analyzing it in chunks.<br>
+  Considers both the general and specific emotions to enhance accuracy.
+
+  - `sentence` : str - target sentence
+  - `original_emotion` : str - segment where default_specific_emotion belongs (positive, negative, neutral)
+  - `default_specific_emotion` : str - raw input by sentence composer (or detected by other sources)
+  - `normalized_emotion` : str - normalized default_specific_emotion
+  
+`match_rate_calc(df)`:<br>
+  Calculates the accuracy of emotion predictions in a dataframe by comparing predicted emotions with their original annotations.
+    
+  - `df` : DataFrame - target DataFrame
+    
+`word_emotions(sentence, emotion, specific_emotion)`:<br>
+  Segments a sentence and assigns emotions to each word based on the overall sentence emotion and specific emotion.
+    
+  - `sentence` : str - target sentence
+  - `emotion` : str - emotion resulted from `get_emotion` module.
+  - `specific_emotion` : str - specific_emotion resulted from `get_emotion` module.
+    
+`noun_emotions(sentence, noun_list, count)`:<br>
+  Analyzes emotions associated with specific nouns within a sentence.
+    
+  - `sentence` : str - target sentence
+  - `noun_list` : list - list of nouns in the sentence.
+  - `count` : bool - if count is `True`, returns `noun_list`, `count_list`
 
 ## Embedding Extraction and Analysis
 The function begins by extracting embeddings for each word in the sentence, as well as for the sentence as a whole.<br>Embeddings are essentially numerical representations that capture the semantic essence of words and sentences.<br>For a more nuanced analysis, it also considers specific emotion embeddings, which are representations of predefined emotional states or tones.<br>By comparing word embeddings with the sentence and emotion embeddings, the function can gauge the degree of emotional congruence or divergence each word has with the overall sentence sentiment.
