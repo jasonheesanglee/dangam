@@ -581,15 +581,23 @@ You can also modify configuration by calling DanGamConfig()
         pos = defaultdict(list)
         neut = defaultdict(list)
         neg = defaultdict(list)
+
+        pos_count = defaultdict(int)
+        neut_count = defaultdict(int)
+        neg_count = defaultdict(int)
+
         for noun in list(set(noun_list)):
             for word, score in word_emo_list.items():
                 if noun in word:
                     if score > self.noun_th:  # when positive
                         pos[noun].append(score)
+                        pos_count[noun] += 1
                     elif score < -1 * self.noun_th:
                         neg[noun].append(score)
+                        neg_count[noun] += 1
                     else:
                         neut[noun].append(score)
+                        neut_count[noun] += 1
 
         positive_noun_score = {}
         neutral_noun_score = {}
@@ -605,4 +613,10 @@ You can also modify configuration by calling DanGamConfig()
             avg_score = sum(score_list) / len(score_list)
             negative_noun_score[word] = avg_score
 
-        return positive_noun_score, neutral_noun_score, negative_noun_score
+        scores = [positive_noun_score, neutral_noun_score, negative_noun_score]
+        counts = [pos_count, neut_count, neg_count]
+
+        if count == True:
+            return scores, counts
+        else:
+            return scores
