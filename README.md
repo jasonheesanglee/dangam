@@ -36,7 +36,7 @@ text = "나는 방금 먹은 마라탕이 너무 좋다. 적당한 양념에 알
 # Analyze the emotion of the sentence
 emotion, specified_emotion = dangam.get_emotion(text)
 
-print("Sentence Emotion:", sentence_emotion)
+print("Sentence Emotion:", emotion, "Specified Emotion:", specified_emotion)
 #### Sentence Emotion: positive, love
 
 # Analyze the emotion of each word
