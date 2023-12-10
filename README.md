@@ -9,6 +9,9 @@ DanGam is a Python package designed for advanced emotion analysis in text, parti
 Utilizing state-of-the-art NLP models, DanGam provides nuanced insights into the emotional tone of texts, enabling more accurate and context-aware sentiment analysis.<br>
 The name DanGam came from the abbreviation of "Word-Emotion" in Korean (단어-감정).
 
+> [!IMPORTANT]
+> Latest Version of the model is 0.0.11
+
 ## Installation
 DanGam can be easily installed via pip. Simply run the following command in your terminal:<br>
 ```shell
@@ -29,6 +32,8 @@ from dangam import DanGam
 ```shell
 # Initialize the DanGam
 dangam = DanGam()
+# add configuration dictionary if needed.
+# details explained after this code cell.
 
 # Example text
 text = "나는 방금 먹은 마라탕이 너무 좋다. 적당한 양념에 알싸한 마라향이 미쳤다. 그런데 고수는 진짜 싫다!"
@@ -63,13 +68,41 @@ print(words_emotion)
 ```
 
 ## Configuration
-DanGam allows a wide range of degrees of customization. ~~(at least trying)~~
-
+DanGam allows a wide range of degrees of customization. <sub>~~(at least trying)~~</sub> <br>
 You can modify various settings like model names, column names, etc., to fit your specific needs.
+- Initialization:
+  - When initially calling `DanGam`, you can add configuration setting in a form of Dictionary.<br>
+    ```
+    dangam = DanGam(cfg:dict)
+    ```
+  - The dictionary should be in the format of<br>
+    ```
+    {"model_name":"hf/some_model", "sub_model_name":"hf/some_model", ...}
+    ```
+  - You can modify a part of the configuration; it will use the default configuration for not mentioned ones.<br><br>
+- `config_info()`:
+  - Prints the current configuration information of the DanGam.
+  - Includes details about the models used, text and emotion column names, and other settings.<br><br>
+- `check_default()`:
+  - Outputs the default configuration values for reference.<br><br>
+- `check_config()`:
+  - Returns the current configuration of DanGam as a dictionary.<br><br>
+- `update_config(config)`:
+  - Update the configuration of DanGam and reinitialize components as necessary.
 
 
 ## Core Functionality
-The primary objective of `word_segmentator` is to assign sentiment scores to each word in a given sentence.<br>These scores are not just arbitrary numbers; they represent how closely each word aligns with the overall emotional tone of the sentence.<br>This process involves several steps, starting from embedding extraction to sentiment score normalization.
+The primary objective of `word_segmentator` is to assign sentiment scores to each word in a given sentence.<br>
+These scores are not just arbitrary numbers; they represent how closely each word aligns with the overall emotional tone of the sentence.<br>This process involves several steps, starting from embedding extraction to sentiment score normalization.<br><br>
+- `get_emotion(sentence, origianl_emotion, default_specific_emotion, normalized_emotion)`:
+  -  Determines the overall emotion of a given sentence by analyzing it in chunks.
+  -  Considers both the general and specific emotions to enhance accuracy.<br><br>
+- `match_rate_calc(df)`:
+  - Calculates the accuracy of emotion predictions in a dataframe by comparing predicted emotions with their original annotations.<br><br>
+- `word_emotions(sentence, emotion, specific_emotion)`:
+  - Segments a sentence and assigns emotions to each word based on the overall sentence emotion and specific emotion.<br><br>
+- `noun_emotions(sentence, noun_list, count)`:
+  - Analyzes emotions associated with specific nouns within a sentence.
 
 ## Embedding Extraction and Analysis
 The function begins by extracting embeddings for each word in the sentence, as well as for the sentence as a whole.<br>Embeddings are essentially numerical representations that capture the semantic essence of words and sentences.<br>For a more nuanced analysis, it also considers specific emotion embeddings, which are representations of predefined emotional states or tones.<br>By comparing word embeddings with the sentence and emotion embeddings, the function can gauge the degree of emotional congruence or divergence each word has with the overall sentence sentiment.
