@@ -80,28 +80,89 @@ You can modify various settings like model names, column names, etc., to fit you
     {"model_name":"hf/some_model", "sub_model_name":"hf/some_model", ...}
     ```
   - You can modify a part of the configuration; it will use the default configuration for not mentioned ones.<br><br>
-- `config_info()`:
+`config_info()`:
   - Prints the current configuration information of the DanGam.
   - Includes details about the models used, text and emotion column names, and other settings.<br><br>
-- `check_default()`:
+`check_default()`:
   - Outputs the default configuration values for reference.<br><br>
-- `check_config()`:
+`check_config()`:
   - Returns the current configuration of DanGam as a dictionary.<br><br>
-- `update_config(config)`:
-  - Update the configuration of DanGam and reinitialize components as necessary.
+`update_config(config)`:
+  - Update the configuration of DanGam and reinitialize components as necessary.<br><br>
+  <details>
+    <summary>Lists of modifiable configuration:</summary>
+      
+      - model_name
+        - The model that will run through the first loop of the sentence segmentation.
+  
+      - sub_model_name
+        - The model that will run through the second loop of the sentence segmentation.
+  
+      - word_senti_model_name
+        - The model that will through the loop of the word segmentation.
+  
+      - text_col
+        - The name of the column that you want to segment the emotion.
+  
+      - default_emotion_column
+        - Pre-labeled emotion by user.
+  
+      - original_emotion_column
+        - Pre-segmented emotions by user.
+        - Performs the best if this section is segmented into 'positive', 'negative', 'neutral'.
+        - Used for accuracy evaluation.
+  
+      - normalized_emotion_column
+        - Normalized pre-labeled emotion.
+        - Performs the best if this section is in English.
+        - Directly used from the second loop, since it will only segment positive, negative, neutral.
+        - Not into 60 different emotions.
+  
+      - sentence_emotion_column
+        - The column name of sentence emotion (pos/neg/neut) you want this module to set.
+  
+      - sentence_specific_emotion_column
+        - The column name of sentence emotion (pos/neg/neut) you want this module to set.
+  
+      - truncation
+        - Turning on and off Truncation throughout the module.
+  
+      - max_length
+        - Max length for chunk_text
+  
+      - emotion_threshold
+        - The threshold for emotion and specific emotion embeddings are adjusted accordingly to refine the combined embedding, ensuring a more nuanced sentiment analysis.
 
+      - alignment_threshold
+        - The threshold for the cosine similarity between the combined sentence-emotion embedding and each individual word embedding.
+  
+      - emotion_weight_reach_threshold
+        - The weight to be multiplied on emotion embedding when similarity exceeds the threshold.
+  
+      - emotion_weight_not_reach_threshold
+        - The weight to be multiplied on emotion embedding when similarity doesn't exceed the threshold.
+  
+      - specific_weight_reach_threshold
+        - The weight to be multiplied on specific emotion embedding when similarity exceeds the threshold.
+  
+      - specific_weight_not_reach_threshold
+        - The weight to be multiplied on specific emotion embedding when similarity doesn't exceed the threshold.
+  
+      - noun_threshold
+        - The threshold for deciding the emotion segment of a word.
+  </details>
 
 ## Core Functionality
 The primary objective of `word_segmentator` is to assign sentiment scores to each word in a given sentence.<br>
 These scores are not just arbitrary numbers; they represent how closely each word aligns with the overall emotional tone of the sentence.<br>This process involves several steps, starting from embedding extraction to sentiment score normalization.<br><br>
-- `get_emotion(sentence, origianl_emotion, default_specific_emotion, normalized_emotion)`:
+`get_emotion(sentence, origianl_emotion, default_specific_emotion, normalized_emotion)`:
   -  Determines the overall emotion of a given sentence by analyzing it in chunks.
   -  Considers both the general and specific emotions to enhance accuracy.<br><br>
-- `match_rate_calc(df)`:
+`match_rate_calc(df)`:
   - Calculates the accuracy of emotion predictions in a dataframe by comparing predicted emotions with their original annotations.<br><br>
-- `word_emotions(sentence, emotion, specific_emotion)`:
+`word_emotions(sentence, emotion, specific_emotion)`:
   - Segments a sentence and assigns emotions to each word based on the overall sentence emotion and specific emotion.<br><br>
-- `noun_emotions(sentence, noun_list, count)`:
+`noun_emotions(sentence, noun_list, count)`:
   - Analyzes emotions associated with specific nouns within a sentence.
 
 ## Embedding Extraction and Analysis
