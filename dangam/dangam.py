@@ -1,4 +1,6 @@
 import re
+
+import pandas as pd
 import torch
 import numpy as np
 from tqdm.auto import tqdm
@@ -63,53 +65,49 @@ neut_tag = [17, 28, 29, 31, 33, 42]
 # noinspection PyTypeChecker
 class DanGam:
     """
-    The DanGam class is designed for emotion analysis in textual data.
-    It leverages advanced NLP models
-    to segment general and specific emotions at both sentence and word levels.
+    The DanGam class is designed for advanced emotion analysis in textual data. It utilizes
+    sophisticated NLP models to accurately identify and categorize emotions at both sentence
+    and word levels, providing nuanced insights into the emotional tone of text.
 
     Attributes:
-        tokenizer (AutoTokenizer): Tokenizer for processing input text.
-        model (AutoModelForSequenceClassification): Primary model for emotion classification.
-        sub_tokenizer (AutoTokenizer): Secondary tokenizer for enhanced emotion analysis.
-        sub_model (AutoModelForSequenceClassification): Secondary model for detailed emotion classification.
-        word_senti_model (AutoModel): Model for word-level sentiment analysis.
-        word_senti_tokenizer (AutoTokenizer): Tokenizer for word-level sentiment analysis.
-        sep_token (str): Separator token used in text processing.
-        emotion_label (dict): Dictionary mapping emotion indices to labels.
-        truncation (bool): Flag to enable or disable truncation in text processing.
-        pos_tag, neut_tag, neg_tag (list): Lists of tags for positive, neutral, and negative emotions.
-        ori_emo_col, text_col, default_emo_col, normalized_emo_col, sent_emo_col, sent_spec_emo_col (str): Column names for various data attributes.
+        cfg (DotDict): Configuration settings for the DanGam instance.
+        model (AutoModelForSequenceClassification): Primary model for general emotion classification.
+        sub_model (AutoModelForSequenceClassification): Secondary model for more detailed emotion classification.
+        word_senti_model (AutoModel): Model dedicated to word-level sentiment analysis.
+        original_emotion_column, text_col, default_emotion_column, normalized_emotion_column, sentence_emotion_column, sentence_specific_emotion_column (str): Column names for various data attributes, configurable as per user needs.
 
     Methods:
-        cfg_info(): Displays configuration information.
-        check_default(): Checks and prints default configuration settings.
-        chunk_text(text, max_length): Breaks text into chunks for processing.
-        get_emotion(...): Determines the overall emotion of a sentence.
-        match_rate_calc(df): Calculates the match rate of predicted emotions against original emotions.
-        get_word_embeddings(sentence, max_length): Retrieves word embeddings from a sentence.
-        get_sentence_embedding(sentence, max_length): Computes the sentence embedding.
-        get_emotion_embedding(emotion): Computes the embedding for a general emotion.
-        get_specific_emotion_embedding(specific_emotion): Computes the embedding for a specific emotion.
-        calculate_vector_differences(sentence, emotion, specific_emotion): Calculates the emotional dissimilarities in a sentence.
-        normalize_sentiment_scores(dissimilarities): Normalizes sentiment scores to a standard range.
-        assign_word_sentiment_scores(sentence, normalized_scores): Assigns sentiment scores to each word in a sentence.
-        word_segmentator(sentence, emotion, specific_emotion): Segments and assigns emotions to words in a sentence.
-        noun_emotions(sentence, noun_list): Analyzes and categorizes emotions associated with specific nouns.
+        cfg_info(): Displays the current configuration settings of the DanGam instance.
+        check_default(): Outputs the default configuration values for reference.
+        check_config(): Returns the current configuration of DanGam as a dictionary.
+        chunk_text(text, max_length): Splits a given text into manageable chunks for model processing.
+        get_emotion(...): Analyzes and returns the overall emotion of a sentence based on model predictions.
+        match_rate_calc(df): Calculates and returns the accuracy of emotion predictions in a DataFrame.
+        normalize_sentiment_scores(dissimilarities): Normalizes sentiment dissimilarity scores.
+        word_emotions(sentence, emotion_label, specific_emotion_label): Segments words in a sentence and assigns them emotions.
+        noun_emotions(sentence, noun_list): Analyzes and categorizes emotions associated with specific nouns in a sentence.
 
     Usage:
-        - Initialize the class.
-        - Use its methods for emotion segmentation and analysis in text.
+        - Initialize the class with default or custom configuration.
+        - Use its methods to perform detailed emotion segmentation and analysis in textual content.
     """
-    VERSION = '0.0.10'
+    VERSION = '0.0.11'
     CREATED_BY = 'jasonheesanglee\thttps://github.com/jasonheesanglee'
 
     def __init__(self, cfg=None):
         """
-        Initialize DanGam with default or custom configuration.
 
-        Args:
-            cfg (dict, optional): Custom configuration settings.
-        """
+    Args:
+        cfg (dict, optional): A dictionary containing custom configuration settings. If provided, these settings will
+                              override the default configuration. The configuration should specify details like model names,
+                              tokenizer preferences, column names for data processing, and other relevant parameters.
+                              If None, the default configuration is used.
+
+    Attributes Initialization:
+        - Initializes the model and tokenizer based on the provided or default configuration.
+        - Sets up various class attributes like separator tokens and emotion labels.
+        - Prepares lists of tags for categorizing emotions as positive, neutral, or negative.
+    """
         print('''
 CAUTION
 This logic performs the best with the models that are pretrained with
@@ -130,7 +128,7 @@ You can also modify configuration by calling DanGamConfig()
         self.neut_tag = neut_tag
         self.neg_tag = neg_tag
 
-    def cfg_info(self):
+    def config_info(self):
         """
         Prints the current configuration information of the DanGam.
         Includes details about the models used, text and emotion column names, and other settings.
@@ -164,14 +162,24 @@ You can also modify configuration by calling DanGamConfig()
         self.sub_model = AutoModelForSequenceClassification.from_pretrained(self.cfg.sub_model_name)
         self.word_senti_model = AutoModel.from_pretrained(self.cfg.word_senti_model_name)
         self.word_senti_tokenizer = AutoTokenizer.from_pretrained(self.cfg.word_senti_model_name)
-        self.truncation = self.cfg.truncation
-        self.ori_emo_col = self.cfg.original_emotion_column
+
         self.text_col = self.cfg.text_col
-        self.default_emo_col = self.cfg.default_emotion_col
-        self.normalized_emo_col = self.cfg.normalized_emotion_col
-        self.sent_emo_col = self.cfg.sentence_emotion_col
-        self.sent_spec_emo_col = self.cfg.sentence_specific_emotion_col
+        self.ori_emo_col = self.cfg.original_emotion_column
+        self.normalized_emo_col = self.cfg.normalized_emotion_column
+
+        self.default_emo_col = self.cfg.default_emotion_column
+        self.sent_emo_col = self.cfg.sentence_emotion_column
+        self.sent_spec_emo_col = self.cfg.sentence_specific_emotion_column
+        self.truncation = self.cfg.truncation
+        self.padding = self.cfg.padding
         self.max_length = self.cfg.max_length
+        self.align_th = self.cfg.alignment_threshold
+        self.emo_th = self.cfg.emotion_threshold
+        self.emo_wt_reach_th = self.cfg.emotion_weight_reach_threshold
+        self.emo_wt_n_reach_th = self.cfg.emotion_weight_not_reach_threshold
+        self.spec_wt_reach_th = self.cfg.specific_weight_reach_threshold
+        self.spec_wt_not_reach_th = self.cfg.specific_weight_not_reach_threshold
+        self.noun_th = self.cfg.noun_threshold
 
     def update_config(self, new_config):
         """
@@ -184,31 +192,9 @@ You can also modify configuration by calling DanGamConfig()
         self.initialize_models()
 
     def check_default(self):
-        print("""
-'model_name': 'hun3359/klue-bert-base-sentiment',
-\tBetter if you stick to this. This is one of the only options that segments the sentences into 60 sentiment labels.\n
-'sub_model_name': 'WhitePeak/bert-base-cased-Korean-sentiment'\n
-'text_col': 'text'
-\tYou need to modify this if your col name is not 'text'.\n
-'original_emotion_column': 'posneg'
-\tYou need to modify this if your col name is not 'posneg'.\n
-'default_emo_col': 'default_emotion'
-\tYou need to modify this if your col name is not 'default_emotion'.\n
-'normalized_emo_col': 'gpt_emotion'
-\tYou need to modify this if your col name is not 'gpt_emotion'.\n
-'truncation': True,\n
-'sent_emo_col': 'klue_emo'\n
-\tYou can leave it as it is, change it, as you wish.\n
-'sent_spec_emo_col': 'klue_specific_emo'
-\tYou can leave it as it is, change it, as you wish.\n
-'max_length': 512
-        """
-              )
+        print(self.cfg.check_default())
 
     def check_config(self):
-        """
-        Returns the current configuration of DanGam as a dictionary.
-        """
         return self.cfg.get_config()
 
     def chunk_text(self, text: str, max_length=512):
@@ -229,17 +215,17 @@ You can also modify configuration by calling DanGamConfig()
             yield ' '.join(tokens[i:i + chunk_size])
 
     def get_emotion(self,
+                    sentence: str,
                     original_emotion: str,
                     default_specific_emotion: str,
-                    gpt_specific_emotion: str,
-                    sentence
+                    normalized_emotion: str
                     ):
         """
         Determines the overall emotion of a given sentence by analyzing it in chunks.
         Considers both the general and specific emotions to enhance accuracy.
 
         Args:
-            original_emotion, default_specific_emotion, gpt_specific_emotion, sentence: Parameters defining the sentence and its emotions.
+            original_emotion, default_specific_emotion, normalized_emotion, sentence: Parameters defining the sentence and its emotions.
 
         Returns:
             tuple: A tuple containing the general emotion and the specific emotion of the sentence.
@@ -249,12 +235,12 @@ You can also modify configuration by calling DanGamConfig()
         num_chunks = 0
 
         for chunk in chunks:
-            if gpt_specific_emotion != '-':
-                inputs = self.tokenizer(gpt_specific_emotion + self.sep_token + chunk, return_tensors='pt',
-                                        padding=True, truncation=self.truncation)
+            if normalized_emotion != '-':
+                inputs = self.tokenizer(normalized_emotion + self.sep_token + chunk, return_tensors='pt',
+                                        padding=self.padding, truncation=self.truncation)
             else:
                 inputs = self.tokenizer(default_specific_emotion + self.sep_token + chunk, return_tensors='pt',
-                                        padding=True, truncation=self.truncation)
+                                        padding=self.padding, truncation=self.truncation)
 
             with torch.no_grad():
                 logits = self.model(**inputs).logits
@@ -289,12 +275,12 @@ You can also modify configuration by calling DanGamConfig()
             emotion_counts = {'positive': 0, 'negative': 0}
 
             for chunk in chunks:
-                if gpt_specific_emotion != '-':
-                    inputs = self.sub_tokenizer(gpt_specific_emotion + self.sep_token + chunk, return_tensors='pt',
-                                                padding=True, truncation=self.truncation)
+                if normalized_emotion != '-':
+                    inputs = self.sub_tokenizer(normalized_emotion + self.sep_token + chunk, return_tensors='pt',
+                                                padding=self.padding, truncation=self.truncation)
                 else:
                     inputs = self.sub_tokenizer(default_specific_emotion + self.sep_token + chunk, return_tensors='pt',
-                                                padding=True, truncation=self.truncation)
+                                                padding=self.padding, truncation=self.truncation)
 
                 with torch.no_grad():
                     logits = self.sub_model(**inputs).logits
@@ -311,19 +297,19 @@ You can also modify configuration by calling DanGamConfig()
                 emotion = 'positive'
             else:
                 emotion = 'neutral'
-            specific_emotion = gpt_specific_emotion
+            specific_emotion = normalized_emotion
             if original_emotion.strip() == emotion.strip():
                 return emotion, specific_emotion
             else:  ############ 여기에 아예 catboost를 써볼까....??
                 sum_prob = None
                 num_chunks = 0
                 for chunk in chunks:
-                    if gpt_specific_emotion != '-':
-                        inputs = self.sub_tokenizer(gpt_specific_emotion + self.sep_token + chunk, return_tensors='pt',
-                                                    padding=True, truncation=self.truncation)
+                    if normalized_emotion != '-':
+                        inputs = self.sub_tokenizer(normalized_emotion + self.sep_token + chunk, return_tensors='pt',
+                                                    padding=self.padding, truncation=self.truncation)
                     else:
                         inputs = self.sub_tokenizer(default_specific_emotion + self.sep_token + chunk,
-                                                    return_tensors='pt', padding=True, truncation=self.truncation)
+                                                    return_tensors='pt', padding=self.padding, truncation=self.truncation)
 
                     with torch.no_grad():
                         logits = self.sub_model(**inputs).logits
@@ -367,11 +353,11 @@ You can also modify configuration by calling DanGamConfig()
             sentence = df.iloc[row_num][self.text_col]
             original_emotion = df.iloc[row_num][self.ori_emo_col]
             default_spec_emo = df.iloc[row_num][self.default_emo_col]
-            gpt_spec_emo = df.iloc[row_num][self.normalized_emo_col]
-            pred_emotion, specified_emotion = self.get_emotion(original_emotion,
+            norm_spec_emo = df.iloc[row_num][self.normalized_emo_col]
+            pred_emotion, specified_emotion = self.get_emotion(sentence,
+                                                               original_emotion,
                                                                default_spec_emo,
-                                                               gpt_spec_emo,
-                                                               sentence
+                                                               norm_spec_emo
                                                                )
             if pred_emotion == original_emotion:
                 mat += 1
@@ -381,7 +367,7 @@ You can also modify configuration by calling DanGamConfig()
 
         return match_rate
 
-    def get_word_embeddings(self, sentence, max_length=512):
+    def get_word_embeddings(self, sentence):
         """
         Retrieves word embeddings for a given sentence using the specified tokenizer and model.
 
@@ -392,7 +378,7 @@ You can also modify configuration by calling DanGamConfig()
         Returns:
             tuple: A tuple containing word embeddings and offset mappings.
         """
-        inputs = self.word_senti_tokenizer(sentence, return_tensors="pt", max_length=max_length,
+        inputs = self.word_senti_tokenizer(sentence, return_tensors="pt", max_length=self.max_length,
                                            truncation=self.truncation, padding='max_length',
                                            return_offsets_mapping=True)
         offset_mapping = inputs.pop('offset_mapping')
@@ -401,7 +387,7 @@ You can also modify configuration by calling DanGamConfig()
         embeddings = outputs.last_hidden_state
         return embeddings, offset_mapping
 
-    def get_sentence_embedding(self, sentence, max_length=512):
+    def get_sentence_embedding(self, sentence):
         """
         Computes the embedding of a sentence by averaging the embeddings of its constituent tokens.
 
@@ -412,7 +398,7 @@ You can also modify configuration by calling DanGamConfig()
         Returns:
             torch.Tensor: The computed sentence embedding.
         """
-        inputs = self.word_senti_tokenizer(sentence, return_tensors="pt", max_length=max_length,
+        inputs = self.word_senti_tokenizer(sentence, return_tensors="pt", max_length=self.max_length,
                                            truncation=self.truncation,
                                            padding="max_length")
         with torch.no_grad():
@@ -431,7 +417,7 @@ You can also modify configuration by calling DanGamConfig()
         Returns:
             torch.Tensor: The embedding of the specified emotion.
         """
-        inputs = self.word_senti_tokenizer(emotion, return_tensors='pt', padding=True,
+        inputs = self.word_senti_tokenizer(emotion, return_tensors='pt', padding=self.padding,
                                            truncation=self.truncation)
         with torch.no_grad():
             outputs = self.word_senti_model(**inputs)
@@ -447,7 +433,7 @@ You can also modify configuration by calling DanGamConfig()
         Returns:
             torch.Tensor: The embedding of the specified specific emotion.
         """
-        inputs = self.word_senti_tokenizer(specific_emotion, return_tensors='pt', padding=True,
+        inputs = self.word_senti_tokenizer(specific_emotion, return_tensors='pt', padding=self.padding,
                                            truncation=self.truncation)
         with torch.no_grad():
             outputs = self.word_senti_model(**inputs)
@@ -473,14 +459,14 @@ You can also modify configuration by calling DanGamConfig()
         general_alignment = F.cosine_similarity(sentence_embedding, emotion_embedding, dim=1)
         specific_alignment = F.cosine_similarity(sentence_embedding, specific_emotion_embedding, dim=1)
 
-        alignment_threshold = 0.7  # 0.75 ~ 0.7
-        emotion_threshold = 0.3  # 0.75 ~ 0.7
+        alignment_threshold = self.align_th
+        emotion_threshold = self.emo_th
 
-        general_weight = 0.5 if general_alignment.item() > emotion_threshold else 0.75
-        specific_weight = 0.1 if specific_alignment.item() > emotion_threshold else 0.23
-        sentence_weight = 1 - (general_weight + specific_weight)
+        emotion_weight = self.emo_wt_reach_th if general_alignment.item() > emotion_threshold else self.emo_wt_n_reach_th
+        specific_weight = self.spec_wt_reach_th if specific_alignment.item() > emotion_threshold else self.spec_wt_not_reach_th
+        sentence_weight = 1 - (emotion_weight + specific_weight)
 
-        combined_embedding = (emotion_embedding * general_weight -
+        combined_embedding = (emotion_embedding * emotion_weight -
                               sentence_embedding * sentence_weight +
                               specific_emotion_embedding * specific_weight) / 2
 
@@ -560,7 +546,7 @@ You can also modify configuration by calling DanGamConfig()
 
         return word_scores
 
-    def word_segmentator(self, sentence, emotion, specific_emotion):
+    def word_emotions(self, sentence: str, emotion: str, specific_emotion: str):
         """
         Segments a sentence and assigns emotions to each word based on the overall sentence emotion and specific emotion.
 
@@ -579,18 +565,18 @@ You can also modify configuration by calling DanGamConfig()
         word_sentiment_scores = self.assign_word_sentiment_scores(sentence, norm_senti_score)
         return word_sentiment_scores
 
-    def noun_emotions(self, sentence, noun_list):
+    def noun_emotions(self, sentence: str, noun_list: list, count: bool=False):
         """
         Analyzes emotions associated with specific nouns within a sentence.
 
         Args:
             sentence (str): The sentence containing the nouns for emotion analysis.
             noun_list (list): A list of nouns to analyze within the sentence.
-
+            count (bool) : True or False for switching on off counting the number of nouns in each segment.
         Returns:
             dict: A dictionary categorizing nouns into positive, neutral, and negative based on their associated emotions.
         """
-        word_emo_list = self.word_segmentator(sentence)
+        word_emo_list = self.word_emotions(sentence)
 
         pos = defaultdict(list)
         neut = defaultdict(list)
@@ -598,9 +584,9 @@ You can also modify configuration by calling DanGamConfig()
         for noun in list(set(noun_list)):
             for word, score in word_emo_list.items():
                 if noun in word:
-                    if score > 0.3:  # when positive
+                    if score > self.noun_th:  # when positive
                         pos[noun].append(score)
-                    elif score < -0.3:
+                    elif score < -1 * self.noun_th:
                         neg[noun].append(score)
                     else:
                         neut[noun].append(score)
