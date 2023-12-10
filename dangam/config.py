@@ -22,18 +22,25 @@ class DanGamConfig:
 'sub_model_name' - The model that will run through the second loop of the sentence segmentation.
 'word_senti_model_name' - The model that will through the loop of the word segmentation.
 'text_col' - The name of the column that you want to segment the emotion.
-'default_emo_col' - Pre-labeled emotion by user.
-'ori_emo_col' - Pre-segmented emotions by user.
+'default_emotion_column' - Pre-labeled emotion by user.
+'original_emotion_column' - Pre-segmented emotions by user.
 \tPerforms the best if this section is segmented into 'positive', 'negative', 'neutral'.
 \tUsed for accuracy evaluation.
-'normalized_emo_col' - Normalized pre-labeled emotion.
+'normalized_emotion_column' - Normalized pre-labeled emotion.
 \tPerforms the best if this section is in English.
 \tDirectly used from the second loop, since it will only segment positive, negative, neutral.
 \tNot into 60 different emotions.
-'truncation' - Bool : Turning on and off Truncation throughout the module. 
-'sent_emo_col' - The column name of sentence emotion (pos/neg/neut) you want this module to set.
-'sent_spec_emo_col' - The column name of sentence emotion (pos/neg/neut) you want this module to set.
+'sentence_emotion_column' - The column name of sentence emotion (pos/neg/neut) you want this module to set.
+'sentence_specific_emotion_column' - The column name of sentence emotion (pos/neg/neut) you want this module to set.
+'truncation' - Turning on and off Truncation throughout the module.
 'max_length' - Max length for chunk_text
+'emotion_threshold' - Threshold for emotion and specific emotion embeddings are adjusted accordingly to refine the combined embedding, ensuring a more nuanced sentiment analysis. 
+'alignment_threshold' - Threshold for the cosine similarity between the combined sentence-emotion embedding and each individual word embedding.
+'emotion_weight_reach_threshold' - The weight to be multiplied on emotion embedding when similarity exceeds threshold.
+'emotion_weight_not_reach_threshold' - The weight to be multiplied on emotion embedding when similarity doesn't exceed threshold.
+'specific_weight_reach_threshold' - The weight to be multiplied on specific emotion embedding when similarity exceeds threshold.
+'specific_weight_not_reach_threshold' - The weight to be multiplied on specific emotion embedding when similarity doesn't exceed threshold.
+'noun_threshold' - Threshold for deciding the emotion_segment of a word.
         """)
 
     def check_default(self):
@@ -63,12 +70,13 @@ This is one of the only options that segments Korean sentences into 60 sentiment
 
 ### BELOW NEEDS CAUTION WHEN MODIFYING ###
 
-'alignment_threshold': 0.7
 'emotion_threshold' : 0.3
+'alignment_threshold': 0.7
 'emotion_weight_reach_threshold':0.5
 'emotion_weight_not_reach_threshold': 0.75
 'specific_weight_reach_threshold': 0.1
 'specific_weight_not_reach_threshold': 0.23
+'noun_threshold' : 0.3
 """
 
 

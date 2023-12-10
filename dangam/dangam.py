@@ -178,7 +178,7 @@ You can also modify configuration by calling DanGamConfig()
         self.emo_wt_reach_th = self.cfg.emotion_weight_reach_threshold
         self.emo_wt_n_reach_th = self.cfg.emotion_weight_not_reach_threshold
         self.spec_wt_reach_th = self.cfg.specific_weight_reach_threshold
-        self.spec_wt_not_reach_th = self.cfg.specific_weight_not_reach_threshold
+        self.spec_wt_n_reach_th = self.cfg.specific_weight_not_reach_threshold
         self.noun_th = self.cfg.noun_threshold
 
     def update_config(self, new_config):
@@ -459,11 +459,8 @@ You can also modify configuration by calling DanGamConfig()
         general_alignment = F.cosine_similarity(sentence_embedding, emotion_embedding, dim=1)
         specific_alignment = F.cosine_similarity(sentence_embedding, specific_emotion_embedding, dim=1)
 
-        alignment_threshold = self.align_th
-        emotion_threshold = self.emo_th
-
-        emotion_weight = self.emo_wt_reach_th if general_alignment.item() > emotion_threshold else self.emo_wt_n_reach_th
-        specific_weight = self.spec_wt_reach_th if specific_alignment.item() > emotion_threshold else self.spec_wt_not_reach_th
+        emotion_weight = self.emo_wt_reach_th if general_alignment.item() > self.emo_th else self.emo_wt_n_reach_th
+        specific_weight = self.spec_wt_reach_th if specific_alignment.item() > self.emo_th else self.spec_wt_n_reach_th
         sentence_weight = 1 - (emotion_weight + specific_weight)
 
         combined_embedding = (emotion_embedding * emotion_weight -
@@ -476,7 +473,7 @@ You can also modify configuration by calling DanGamConfig()
 
         for word_embedding in word_embeddings.squeeze():
             sim = F.cosine_similarity(combined_embedding, word_embedding.unsqueeze(0))
-            if sim > alignment_threshold:
+            if sim > self.align_th:
                 adjust_sim = sim.item()
             else:
                 adjust_sim = 1 - sim.item()
