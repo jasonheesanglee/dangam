@@ -194,6 +194,9 @@ The core of `word_segmentator` lies in calculating these sentiment scores.<br>It
 ## Normalization and Interpretation
 Post-calculation, the sentiment scores undergo normalization, a crucial step to ensure that the scores are within a consistent range (typically -1 to 1).<br>This normalization helps in interpreting the scores uniformly across different sentences and contexts.<br>A score closer to 1 indicates a strong alignment with the sentence's emotion, whereas a score near -1 suggests a contrast.<br>Scores around 0 imply neutrality or a lack of strong emotional alignment.
 
+## Diagram
+<img src="https://github.com/jasonheesanglee/dangam/blob/2da81bac42fde4688590c5c6981d496ea5d10fa1/data/DanGam.png">
+
 ## Contributing
 Contributions to DanGam are welcome!<br>
 Whether it's feature requests, bug reports, or code contributions, please feel free to contribute.<br>
