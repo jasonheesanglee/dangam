@@ -1,5 +1,5 @@
 [![license](https://img.shields.io/badge/License-MIT-brightgreen.svg)](https://github.com/jasonheesanglee/DanGam/blob/master/LICENSE)
-[![PyPI version](https://badge.fury.io/py/DanGam.svg)](https://badge.fury.io/py/DanGam)
+<a href="https://badge.fury.io/py/DanGam" rel="nofollow"><img src="https://pypi-camo.global.ssl.fastly.net/04cb3ddae0f35fa68aa2cbc1ff9f22f85307558b/68747470733a2f2f62616467652e667572792e696f2f70792f44616e47616d2e737667" alt="PyPI version"></a>
 [![PyPI pyversions](https://img.shields.io/pypi/pyversions/DanGam.svg)](https://pypi.python.org/pypi/DanGam/)
 [![PyPI status](https://img.shields.io/pypi/status/DanGam.svg)](https://pypi.python.org/pypi/DanGam/)
 
