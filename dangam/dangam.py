@@ -90,7 +90,7 @@ class DanGam:
         - Initialize the class with default or custom configuration.
         - Use its methods to perform detailed emotion segmentation and analysis in textual content.
     """
-    VERSION = '0.0.127'
+    VERSION = '0.0.128'
     CREATED_BY = 'jasonheesanglee\thttps://github.com/jasonheesanglee'
 
     def __init__(self, cfg=None):
@@ -612,8 +612,8 @@ You can also modify configuration by calling update_config()
             avg_score = sum(score_list) / len(score_list)
             negative_noun_score[word] = avg_score
 
-        scores = [positive_noun_score, neutral_noun_score, negative_noun_score]
-        counts = [pos_count, neut_count, neg_count]
+        scores = [dict(positive_noun_score), dict(neutral_noun_score), dict(negative_noun_score)]
+        counts = [dict(pos_count), dict(neut_count), dict(neg_count)]
 
         if count == True:
             return scores, counts
