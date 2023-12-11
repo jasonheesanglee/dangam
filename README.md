@@ -8,6 +8,9 @@ DanGam is a Python package designed for advanced emotion analysis in text, mainl
 DanGam provides insights into the emotional tone of texts, aiming for more accurate and context-aware sentiment analysis.<br>
 The name DanGam came from the abbreviation of "Word-Emotion" in Korean (단어-감정).
 
+> [!WARNING]
+> ON GOING HOT FIX
+
 > [!IMPORTANT]
 > Latest Version of the model is 0.0.126
 
