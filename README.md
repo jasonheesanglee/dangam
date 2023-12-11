@@ -9,7 +9,7 @@ DanGam provides insights into the emotional tone of texts, aiming for more accur
 The name DanGam came from the abbreviation of "Word-Emotion" in Korean (단어-감정).
 
 > [!IMPORTANT]
-> Latest Version of the model is 0.0.126
+> Latest Version of the model is 0.0.129
 
 ## Installation
 DanGam can be easily installed via pip. Simply run the following command in your terminal:<br>
