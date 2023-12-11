@@ -90,7 +90,7 @@ class DanGam:
         - Initialize the class with default or custom configuration.
         - Use its methods to perform detailed emotion segmentation and analysis in textual content.
     """
-    VERSION = '0.0.123'
+    VERSION = '0.0.124'
     CREATED_BY = 'jasonheesanglee\thttps://github.com/jasonheesanglee'
 
     def __init__(self, cfg=None):
@@ -532,7 +532,6 @@ You can also modify configuration by calling update_config()
             else:
                 if current_word and not current_word.startswith('['):
                     average_score = current_score / num_tokens if num_tokens > 0 else current_score
-                    word_scores[current_word] = average_score
                     word_scores.append({current_word:average_score})
                 current_word = token
                 current_score = score

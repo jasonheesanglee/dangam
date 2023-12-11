@@ -5,7 +5,7 @@ with open('requirements.txt') as f:
 
 setup(
     name='DanGam',
-    version='0.0.123',
+    version='0.0.124',
     packages=find_packages(),
     description='A brief description of your package',
     long_description=open('README.md').read(),
