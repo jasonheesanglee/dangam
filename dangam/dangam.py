@@ -90,7 +90,7 @@ class DanGam:
         - Initialize the class with default or custom configuration.
         - Use its methods to perform detailed emotion segmentation and analysis in textual content.
     """
-    VERSION = '0.0.122'
+    VERSION = '0.0.123'
     CREATED_BY = 'jasonheesanglee\thttps://github.com/jasonheesanglee'
 
     def __init__(self, cfg=None):
@@ -519,12 +519,12 @@ You can also modify configuration by calling update_config()
         encoded = self.word_senti_tokenizer.encode_plus(sentence, return_tensors='pt', truncation=self.truncation,
                                                         padding='max_length', max_length=512)
         tokenized_words = self.word_senti_tokenizer.convert_ids_to_tokens(encoded['input_ids'][0])
-        word_scores = {}
+        word_scores = []
         current_word = ""
         current_score = 0
         num_tokens = 0
-
         for token, score in zip(tokenized_words, normalized_scores):
+
             if token.startswith("##"):
                 current_word += token.lstrip("##")
                 current_score += score
@@ -533,6 +533,7 @@ You can also modify configuration by calling update_config()
                 if current_word and not current_word.startswith('['):
                     average_score = current_score / num_tokens if num_tokens > 0 else current_score
                     word_scores[current_word] = average_score
+                    word_scores.append({current_word:average_score})
                 current_word = token
                 current_score = score
                 num_tokens = 1
@@ -540,7 +541,7 @@ You can also modify configuration by calling update_config()
         # Add the last word
         if current_word and not current_word.startswith('['):
             average_score = current_score / num_tokens if num_tokens > 0 else current_score
-            word_scores[current_word] = average_score
+            word_scores.append({current_word:average_score})
 
         return word_scores
 
