@@ -90,7 +90,7 @@ class DanGam:
         - Initialize the class with default or custom configuration.
         - Use its methods to perform detailed emotion segmentation and analysis in textual content.
     """
-    VERSION = '0.0.126'
+    VERSION = '0.0.127'
     CREATED_BY = 'jasonheesanglee\thttps://github.com/jasonheesanglee'
 
     def __init__(self, cfg=None):
