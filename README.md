@@ -94,7 +94,7 @@ You can modify various settings like model names, column names, etc., to fit you
   - Update the configuration of DanGam and reinitialize components as necessary.<br><br>
   
   <details>
-    <summary>Lists of modifiable configuration:</summary>
+    <summary>List of modifiable configurations</summary>
       
       - model_name
         - The model that will run through the first loop of the sentence segmentation.
