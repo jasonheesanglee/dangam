@@ -53,7 +53,7 @@ print("Specified Emotion:", specified_emotion)
 
 words_emotion = dangam.word_emotions(text, emotion, specified_emotion)
 print(words_emotion)
-#{'나는': 1.0,
+# {'나는': 1.0,
 # '방금': 0.8419228076866834,
 # '먹은': 1.0,
 # '마라탕이': 0.8522973110543406,
