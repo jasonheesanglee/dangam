@@ -9,7 +9,7 @@ Utilizing state-of-the-art NLP models, DanGam provides nuanced insights into the
 The name DanGam came from the abbreviation of "Word-Emotion" in Korean (단어-감정).
 
 > [!IMPORTANT]
-> Latest Version of the model is 0.0.12
+> Latest Version of the model is 0.0.121
 
 ## Installation
 DanGam can be easily installed via pip. Simply run the following command in your terminal:<br>
