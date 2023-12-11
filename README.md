@@ -4,12 +4,12 @@
 
 # DanGam
 
-DanGam is a Python package designed for advanced emotion analysis in text, particularly focused on Korean language.<br>
-Utilizing state-of-the-art NLP models, DanGam provides nuanced insights into the emotional tone of texts, enabling more accurate and context-aware sentiment analysis.<br>
+DanGam is a Python package designed for advanced emotion analysis in text, mainly focused on the Korean language.<br>
+DanGam provides insights into the emotional tone of texts, aiming for more accurate and context-aware sentiment analysis.<br>
 The name DanGam came from the abbreviation of "Word-Emotion" in Korean (단어-감정).
 
 > [!IMPORTANT]
-> Latest Version of the model is 0.0.121
+> Latest Version of the model is 0.0.122
 
 ## Installation
 DanGam can be easily installed via pip. Simply run the following command in your terminal:<br>
@@ -21,7 +21,7 @@ pip install DanGam
 - **Sentence Emotion Segmentation**: DanGam segments sentences and identifies their overarching emotional tone (positive, negative, or neutral).
 - **Word-Level Emotion Analysis**: It goes deeper into the emotional analysis by evaluating the sentiment of individual words within the context of their sentences.
 - **Customizability**: Flexible configuration options allow users to tailor the analysis to specific requirements.
-- **Support for Korean Language**: Specifically fine-tuned for Korean language texts, offering more reliable results than general-purpose sentiment analysis tools.
+- **Support for Korean Language**: Specifically for Korean language texts, offering more reliable results than general-purpose sentiment analysis tools.
 
 ## Quick Start
 ```
