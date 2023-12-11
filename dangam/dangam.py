@@ -112,7 +112,7 @@ CAUTION
 This logic performs the best with the models that are pretrained with
 AI HUB Dataset https://aihub.or.kr/aihubdata/data/view.do?currMenu=115&topMenu=100&aihubDataSe=realm&dataSetSn=86
 or any Dataset that has 60 sentiment tags listed as described in https://huggingface.co/hun3359/klue-bert-base-sentiment/blob/main/config.json\n
-You can also modify configuration by calling DanGamConfig()
+You can also modify configuration by calling update_config()
         '''
               )
         if cfg is not None:
@@ -226,7 +226,7 @@ You can also modify configuration by calling DanGamConfig()
         Considers both the general and specific emotions to enhance accuracy.
 
         Args:
-            original_emotion, default_specific_emotion, normalized_emotion, sentence: Parameters defining the sentence and its emotions.
+            sentence, original_emotion, default_specific_emotion, normalized_emotion : Parameters defining the sentence and its emotions.
 
         Returns:
             tuple: A tuple containing the general emotion and the specific emotion of the sentence.
