@@ -1,6 +1,5 @@
 import re
 
-import pandas as pd
 import torch
 import numpy as np
 from tqdm.auto import tqdm
@@ -91,7 +90,7 @@ class DanGam:
         - Initialize the class with default or custom configuration.
         - Use its methods to perform detailed emotion segmentation and analysis in textual content.
     """
-    VERSION = '0.0.11'
+    VERSION = '0.0.12'
     CREATED_BY = 'jasonheesanglee\thttps://github.com/jasonheesanglee'
 
     def __init__(self, cfg=None):
@@ -117,9 +116,11 @@ You can also modify configuration by calling DanGamConfig()
         '''
               )
         if cfg is not None:
-            self.cfg = DotDict(DanGamConfig(cfg))
+            self.cfg = DanGamConfig(cfg)
+            # print('why?')
         else:
-            self.cfg = DotDict(DanGamConfig())
+            self.cfg = DanGamConfig()
+            # print('good')
         self.initialize_models()
         self.sep_token = ' >>>> '
         self.emotion_label = emotion_labels

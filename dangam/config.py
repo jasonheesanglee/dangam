@@ -13,7 +13,7 @@ class DanGamConfig:
         cfg_info(): Prints the detailed information about configuration options.
         check_default(): Prints the default configuration settings.
     """
-    VERSION = '0.0.11'
+    VERSION = '0.0.12'
     CREATED_BY = 'jasonheesanglee\thttps://github.com/jasonheesanglee'
 
     def cfg_info(self) -> None:
@@ -113,27 +113,27 @@ This is one of the only options that segments Korean sentences into 60 sentiment
         if cfg is not None:
             if isinstance(cfg, dict):
                 config.update(cfg)
-        default_cfg = config
 
-        self.model_name = default_cfg['model_name']
-        self.sub_model_name = default_cfg['sub_model_name']
-        self.word_senti_model_name = default_cfg['word_senti_model_name']
-        self.text_col = default_cfg['text_col']
-        self.original_emotion_column = default_cfg['original_emotion_column']
-        self.normalized_emotion_column = default_cfg['normalized_emotion_column']
-        self.default_emotion_column = default_cfg['default_emotion_column']
-        self.sentence_emotion_column = default_cfg['sentence_emotion_column']
-        self.sentence_specific_emotion_column = default_cfg['sentence_specific_emotion_column']
-        self.truncation = default_cfg['truncation']
-        self.padding = default_cfg['padding']
-        self.max_length = default_cfg['max_length']
-        self.alignment_threshold = default_cfg['alignment_threshold']
-        self.emotion_threshold = default_cfg['emotion_threshold']
-        self.emotion_weight_reach_threshold = default_cfg['emotion_weight_reach_threshold']
-        self.emotion_weight_not_reach_threshold = default_cfg['emotion_weight_not_reach_threshold']
-        self.specific_weight_reach_threshold = default_cfg['specific_weight_reach_threshold']
-        self.specific_weight_not_reach_threshold = default_cfg['specific_weight_not_reach_threshold']
-        self.noun_threshold = default_cfg['noun_threshold']
+        self.model_name = config['model_name']
+        self.sub_model_name = config['sub_model_name']
+        self.word_senti_model_name = config['word_senti_model_name']
+        self.text_col = config['text_col']
+        self.original_emotion_column = config['original_emotion_column']
+        self.normalized_emotion_column = config['normalized_emotion_column']
+        self.default_emotion_column = config['default_emotion_column']
+        self.sentence_emotion_column = config['sentence_emotion_column']
+        self.sentence_specific_emotion_column = config['sentence_specific_emotion_column']
+        self.truncation = config['truncation']
+        self.padding = config['padding']
+        self.max_length = config['max_length']
+        self.alignment_threshold = config['alignment_threshold']
+        self.emotion_threshold = config['emotion_threshold']
+        self.emotion_weight_reach_threshold = config['emotion_weight_reach_threshold']
+        self.emotion_weight_not_reach_threshold = config['emotion_weight_not_reach_threshold']
+        self.specific_weight_reach_threshold = config['specific_weight_reach_threshold']
+        self.specific_weight_not_reach_threshold = config['specific_weight_not_reach_threshold']
+        self.noun_threshold = config['noun_threshold']
+
     def get_config(self):
         """
         Returns the current configuration as a dictionary.
