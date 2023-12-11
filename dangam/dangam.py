@@ -90,7 +90,7 @@ class DanGam:
         - Initialize the class with default or custom configuration.
         - Use its methods to perform detailed emotion segmentation and analysis in textual content.
     """
-    VERSION = '0.0.125'
+    VERSION = '0.0.126'
     CREATED_BY = 'jasonheesanglee\thttps://github.com/jasonheesanglee'
 
     def __init__(self, cfg=None):
@@ -563,7 +563,7 @@ You can also modify configuration by calling update_config()
         word_sentiment_scores = self.assign_word_sentiment_scores(sentence, norm_senti_score)
         return word_sentiment_scores
 
-    def noun_emotions(self, sentence: str, emotion:str, specific_emotion:str, noun_list: list, count: bool=False):
+    def noun_emotions(self, sentence: str, emotion: str, specific_emotion: str, noun_list: list, count: bool = False):
         """
         Analyzes emotions associated with specific nouns within a sentence.
 
@@ -585,29 +585,30 @@ You can also modify configuration by calling update_config()
         neg_count = defaultdict(int)
 
         for noun in list(set(noun_list)):
-            for word, score in word_emo_list:
-                if noun in word:
-                    if score > self.noun_th:  # when positive
-                        pos[noun].append(score)
-                        pos_count[noun] += 1
-                    elif score < -1 * self.noun_th:
-                        neg[noun].append(score)
-                        neg_count[noun] += 1
-                    else:
-                        neut[noun].append(score)
-                        neut_count[noun] += 1
+            for dict_ in word_emo_list:
+                for word, score in dict_.items():
+                    if noun in word:
+                        if score > self.noun_th:  # when positive
+                            pos[noun].append(score)
+                            pos_count[noun] += 1
+                        elif score < -1 * self.noun_th:
+                            neg[noun].append(score)
+                            neg_count[noun] += 1
+                        else:
+                            neut[noun].append(score)
+                            neut_count[noun] += 1
 
         positive_noun_score = {}
         neutral_noun_score = {}
         negative_noun_score = {}
 
-        for word, score_list in pos:
+        for word, score_list in dict(pos).items():
             avg_score = sum(score_list) / len(score_list)
             positive_noun_score[word] = avg_score
-        for word, score_list in neut:
+        for word, score_list in dict(neut).items():
             avg_score = sum(score_list) / len(score_list)
             neutral_noun_score[word] = avg_score
-        for word, score_list in neg:
+        for word, score_list in dict(neg).items():
             avg_score = sum(score_list) / len(score_list)
             negative_noun_score[word] = avg_score
 
