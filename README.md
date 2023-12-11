@@ -1,5 +1,4 @@
 [![license](https://img.shields.io/badge/License-MIT-brightgreen.svg)](https://github.com/jasonheesanglee/DanGam/blob/master/LICENSE)
-<a href="https://badge.fury.io/py/DanGam" rel="nofollow"><img src="https://pypi-camo.global.ssl.fastly.net/04cb3ddae0f35fa68aa2cbc1ff9f22f85307558b/68747470733a2f2f62616467652e667572792e696f2f70792f44616e47616d2e737667" alt="PyPI version"></a>
 [![PyPI pyversions](https://img.shields.io/pypi/pyversions/DanGam.svg)](https://pypi.python.org/pypi/DanGam/)
 [![PyPI status](https://img.shields.io/pypi/status/DanGam.svg)](https://pypi.python.org/pypi/DanGam/)
 
@@ -10,7 +9,7 @@ Utilizing state-of-the-art NLP models, DanGam provides nuanced insights into the
 The name DanGam came from the abbreviation of "Word-Emotion" in Korean (단어-감정).
 
 > [!IMPORTANT]
-> Latest Version of the model is 0.0.11
+> Latest Version of the model is 0.0.12
 
 ## Installation
 DanGam can be easily installed via pip. Simply run the following command in your terminal:<br>
@@ -37,34 +36,37 @@ dangam = DanGam()
 
 # Example text
 text = "나는 방금 먹은 마라탕이 너무 좋다. 적당한 양념에 알싸한 마라향이 미쳤다. 그런데 고수는 진짜 싫다!"
+original_emotion = "satisfied"
+default_emotion = "good food"
+normalized_specific_emotion = "satisfied"
 
 # Analyze the emotion of the sentence
-emotion, specified_emotion = dangam.get_emotion(text)
+emotion, specified_emotion = dangam.get_emotion(text, original_emotion, default_emotion, normalized_specific_emotion)
 
 print("Sentence Emotion:", emotion)
 print("Specified Emotion:", specified_emotion)
 #### Sentence Emotion: positive
-#### Specified Emotion: love
+#### Specified Emotion: satisfied
 
 # Analyze the emotion of each word
 
-words_emotion = dangam.word_segmentator(text, emotion, specified_emotion)
+words_emotion = dangam.word_emotions(text, emotion, specified_emotion)
 print(words_emotion)
-# [{'나는': 1.0},
-# {'방금': 0.7820801305188394},
-# {'먹은': 1.0},
-# {'마라탕이': 0.8607851484076837},
-# {'너무': 1.0},
-# {'좋다': 1.0},
-# {'적당한': 0.9875665687342202},
-# {'양념에': 0.7548636813630957},
-# {'알싸한': 0.4555193623403373},
-# {'마라향이': 0.3306043180344058},
-# {'미쳤다': 0.3766061055294425},
-# {'그런데': -0.0704177035812985},
-# {'고수는': -0.7508980581598864},
-# {'진짜': -0.9509202889420695},
-# {'싫다': -0.9517512748457806}]
+# {'나는': 1.0,
+# '방금': 0.8419228076866834,
+# '먹은': 1.0,
+# '마라탕이': 0.8522973110543406,
+# '너무': 1.0,
+# '좋다': 1.0,
+# '적당한': 0.965806179144829,
+# '양념에': 0.7151325862316465,
+# '알싸한': 0.4678710873322536,
+# '마라향이': 0.328179239525493,
+# '미쳤다': 0.34263925379014165,
+# '그런데': -0.07491504014905744,
+# '고수는': -0.7992964009024587,
+# '진짜': -0.9295882226863167,
+# '싫다': -0.9120299268217638}
 ```
 
 ## Configuration
@@ -91,7 +93,7 @@ You can modify various settings like model names, column names, etc., to fit you
   - Update the configuration of DanGam and reinitialize components as necessary.<br><br>
   
   <details>
-    <summary>Lists of modifiable configuration:</summary>
+    <summary>List of modifiable configurations</summary>
       
       - model_name
         - The model that will run through the first loop of the sentence segmentation.
