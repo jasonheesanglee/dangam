@@ -563,7 +563,7 @@ You can also modify configuration by calling update_config()
         word_sentiment_scores = self.assign_word_sentiment_scores(sentence, norm_senti_score)
         return word_sentiment_scores
 
-    def noun_emotions(self, sentence: str, noun_list: list, count: bool=False):
+    def noun_emotions(self, sentence: str, emotion:str, specific_emotion:str, noun_list: list, count: bool=False):
         """
         Analyzes emotions associated with specific nouns within a sentence.
 
@@ -574,7 +574,7 @@ You can also modify configuration by calling update_config()
         Returns:
             dict: A dictionary categorizing nouns into positive, neutral, and negative based on their associated emotions.
         """
-        word_emo_list = self.word_emotions(sentence)
+        word_emo_list = self.word_emotions(sentence, emotion, specific_emotion)
 
         pos = defaultdict(list)
         neut = defaultdict(list)
