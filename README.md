@@ -37,7 +37,7 @@ dangam = DanGam()
 
 # Example text
 text = "나는 방금 먹은 마라탕이 너무 좋다. 적당한 양념에 알싸한 마라향이 미쳤다. 그런데 고수는 진짜 싫다!"
-original_emotion = "satisfied"
+original_emotion = "positive"
 default_emotion = "good food"
 normalized_specific_emotion = "satisfied"
 
