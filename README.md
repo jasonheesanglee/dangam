@@ -9,7 +9,7 @@ DanGam provides insights into the emotional tone of texts, aiming for more accur
 The name DanGam came from the abbreviation of "Word-Emotion" in Korean (단어-감정).
 
 > [!IMPORTANT]
-> Latest Version of the model is 0.0.130
+> Latest Version of the model is 0.0.130<br>
 > GPU Enabled from Version 0.0.130
 
 ## Installation
