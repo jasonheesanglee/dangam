@@ -90,7 +90,7 @@ class DanGam:
         - Initialize the class with default or custom configuration.
         - Use its methods to perform detailed emotion segmentation and analysis in textual content.
     """
-    VERSION = '0.0.129'
+    VERSION = '0.0.130'
     CREATED_BY = 'jasonheesanglee\thttps://github.com/jasonheesanglee'
 
     def __init__(self, cfg=None):
@@ -157,12 +157,19 @@ You can also modify configuration by calling update_config()
         """
         Initialize models based on the current configuration.
         """
+        self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+
         self.tokenizer = AutoTokenizer.from_pretrained(self.cfg.model_name)
         self.model = AutoModelForSequenceClassification.from_pretrained(self.cfg.model_name)
+        self.model.to(self.device)
+
         self.sub_tokenizer = AutoTokenizer.from_pretrained(self.cfg.sub_model_name)
         self.sub_model = AutoModelForSequenceClassification.from_pretrained(self.cfg.sub_model_name)
-        self.word_senti_model = AutoModel.from_pretrained(self.cfg.word_senti_model_name)
+        self.sub_model.to(self.device)
+
         self.word_senti_tokenizer = AutoTokenizer.from_pretrained(self.cfg.word_senti_model_name)
+        self.word_senti_model = AutoModel.from_pretrained(self.cfg.word_senti_model_name)
+        self.word_senti_model.to(self.device)
 
         self.text_col = self.cfg.text_col
         self.ori_emo_col = self.cfg.original_emotion_column
@@ -243,8 +250,11 @@ You can also modify configuration by calling update_config()
                 inputs = self.tokenizer(default_specific_emotion + self.sep_token + chunk, return_tensors='pt',
                                         padding=self.padding, truncation=self.truncation)
 
+            inputs = {k: v.to(self.device) for k, v in inputs.items()}
+
             with torch.no_grad():
                 logits = self.model(**inputs).logits
+
             probabilities = torch.nn.functional.softmax(logits, dim=-1)
 
             if sum_prob is None:
@@ -283,6 +293,8 @@ You can also modify configuration by calling update_config()
                     inputs = self.sub_tokenizer(default_specific_emotion + self.sep_token + chunk, return_tensors='pt',
                                                 padding=self.padding, truncation=self.truncation)
 
+                inputs = {k: v.to(self.device) for k, v in inputs.items()}
+
                 with torch.no_grad():
                     logits = self.sub_model(**inputs).logits
                 probabilities = torch.nn.functional.softmax(logits, dim=-1)
@@ -310,7 +322,10 @@ You can also modify configuration by calling update_config()
                                                     padding=self.padding, truncation=self.truncation)
                     else:
                         inputs = self.sub_tokenizer(default_specific_emotion + self.sep_token + chunk,
-                                                    return_tensors='pt', padding=self.padding, truncation=self.truncation)
+                                                    return_tensors='pt', padding=self.padding,
+                                                    truncation=self.truncation)
+
+                    inputs = {k: v.to(self.device) for k, v in inputs.items()}
 
                     with torch.no_grad():
                         logits = self.sub_model(**inputs).logits
@@ -383,6 +398,7 @@ You can also modify configuration by calling update_config()
                                            truncation=self.truncation, padding='max_length',
                                            return_offsets_mapping=True)
         offset_mapping = inputs.pop('offset_mapping')
+        inputs = {k: v.to(self.device) for k, v in inputs.items()}
         with torch.no_grad():
             outputs = self.word_senti_model(**inputs)
         embeddings = outputs.last_hidden_state
@@ -402,6 +418,7 @@ You can also modify configuration by calling update_config()
         inputs = self.word_senti_tokenizer(sentence, return_tensors="pt", max_length=self.max_length,
                                            truncation=self.truncation,
                                            padding="max_length")
+        inputs = {k: v.to(self.device) for k, v in inputs.items()}
         with torch.no_grad():
             outputs = self.word_senti_model(**inputs)
         # Average the token embeddings to get the sentence embedding
@@ -420,6 +437,7 @@ You can also modify configuration by calling update_config()
         """
         inputs = self.word_senti_tokenizer(emotion, return_tensors='pt', padding=self.padding,
                                            truncation=self.truncation)
+        inputs = {k: v.to(self.device) for k, v in inputs.items()}
         with torch.no_grad():
             outputs = self.word_senti_model(**inputs)
         return outputs.last_hidden_state.mean(dim=1)
@@ -436,6 +454,7 @@ You can also modify configuration by calling update_config()
         """
         inputs = self.word_senti_tokenizer(specific_emotion, return_tensors='pt', padding=self.padding,
                                            truncation=self.truncation)
+        inputs = {k: v.to(self.device) for k, v in inputs.items()}
         with torch.no_grad():
             outputs = self.word_senti_model(**inputs)
         return outputs.last_hidden_state.mean(dim=1)
@@ -532,7 +551,7 @@ You can also modify configuration by calling update_config()
             else:
                 if current_word and not current_word.startswith('['):
                     average_score = current_score / num_tokens if num_tokens > 0 else current_score
-                    word_scores.append({current_word:average_score})
+                    word_scores.append({current_word: average_score})
                 current_word = token
                 current_score = score
                 num_tokens = 1
@@ -540,7 +559,7 @@ You can also modify configuration by calling update_config()
         # Add the last word
         if current_word and not current_word.startswith('['):
             average_score = current_score / num_tokens if num_tokens > 0 else current_score
-            word_scores.append({current_word:average_score})
+            word_scores.append({current_word: average_score})
 
         return word_scores
 
