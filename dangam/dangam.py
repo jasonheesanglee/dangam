@@ -81,7 +81,6 @@ class DanGam:
         check_config(): Returns the current configuration of DanGam as a dictionary.
         chunk_text(text, max_length): Splits a given text into manageable chunks for model processing.
         get_emotion(...): Analyzes and returns the overall emotion of a sentence based on model predictions.
-        match_rate_calc(df): Calculates and returns the accuracy of emotion predictions in a DataFrame.
         normalize_sentiment_scores(dissimilarities): Normalizes sentiment dissimilarity scores.
         word_emotions(sentence, emotion_label, specific_emotion_label): Segments words in a sentence and assigns them emotions.
         noun_emotions(sentence, noun_list): Analyzes and categorizes emotions associated with specific nouns in a sentence.
@@ -90,7 +89,7 @@ class DanGam:
         - Initialize the class with default or custom configuration.
         - Use its methods to perform detailed emotion segmentation and analysis in textual content.
     """
-    VERSION = '0.0.132'
+    VERSION = '0.0.133'
     CREATED_BY = 'jasonheesanglee\thttps://github.com/jasonheesanglee'
 
     def __init__(self, cfg=None):
@@ -239,7 +238,8 @@ You can also modify configuration by calling update_config()
             normalized_emotion (str) -> optional : Normalized User input emotion (good food, bad person, lovely day, etc..)
 
         Returns:
-            tuple: A tuple containing the general emotion and the specific emotion of the sentence.
+            emotion (str) : string of overall emotion of the sentence. (positive, neutral, negative)
+            specific_emotion (str) : string of specific emotion of the sentence. (one out of 60 emotions)
         """
         if original_emotion != None or default_specific_emotion != None or normalized_emotion != None:
             chunks = list(self.chunk_text(sentence))
@@ -499,36 +499,36 @@ You can also modify configuration by calling update_config()
                         new_emotion = 'neutral'
                     return new_emotion, new_specific_emotion
 
-    def match_rate_calc(self, df):
-        """
-        Calculates the accuracy of emotion predictions in a dataframe by comparing predicted emotions
-        with their original annotations.
-
-        Args:
-            df (DataFrame): A pandas DataFrame containing text data along with original and predicted emotion annotations.
-
-        Returns:
-            float: The match rate percentage indicating the accuracy of emotion predictions.
-        """
-        mat = 0
-        unmat = 0
-        for row_num in tqdm(range(df.shape[0])):
-            sentence = df.iloc[row_num][self.text_col]
-            original_emotion = df.iloc[row_num][self.ori_emo_col]
-            default_spec_emo = df.iloc[row_num][self.default_emo_col]
-            norm_spec_emo = df.iloc[row_num][self.normalized_emo_col]
-            pred_emotion, specified_emotion = self.get_emotion(sentence,
-                                                               original_emotion,
-                                                               default_spec_emo,
-                                                               norm_spec_emo
-                                                               )
-            if pred_emotion == original_emotion:
-                mat += 1
-            else:
-                unmat += 1
-        match_rate = mat / (mat + unmat) * 100
-
-        return match_rate
+    # def match_rate_calc(self, df):
+    #     """
+    #     Calculates the accuracy of emotion predictions in a dataframe by comparing predicted emotions
+    #     with their original annotations.
+    #
+    #     Args:
+    #         df (DataFrame): A pandas DataFrame containing text data along with original and predicted emotion annotations.
+    #
+    #     Returns:
+    #         float: The match rate percentage indicating the accuracy of emotion predictions.
+    #     """
+    #     mat = 0
+    #     unmat = 0
+    #     for row_num in tqdm(range(df.shape[0])):
+    #         sentence = df.iloc[row_num][self.text_col]
+    #         original_emotion = df.iloc[row_num][self.ori_emo_col]
+    #         default_spec_emo = df.iloc[row_num][self.default_emo_col]
+    #         norm_spec_emo = df.iloc[row_num][self.normalized_emo_col]
+    #         pred_emotion, specified_emotion = self.get_emotion(sentence,
+    #                                                            original_emotion,
+    #                                                            default_spec_emo,
+    #                                                            norm_spec_emo
+    #                                                            )
+    #         if pred_emotion == original_emotion:
+    #             mat += 1
+    #         else:
+    #             unmat += 1
+    #     match_rate = mat / (mat + unmat) * 100
+    #
+    #     return match_rate
 
     def get_word_embeddings(self, sentence):
         """
