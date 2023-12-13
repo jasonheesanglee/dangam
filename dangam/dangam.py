@@ -90,7 +90,7 @@ class DanGam:
         - Initialize the class with default or custom configuration.
         - Use its methods to perform detailed emotion segmentation and analysis in textual content.
     """
-    VERSION = '0.0.131'
+    VERSION = '0.0.132'
     CREATED_BY = 'jasonheesanglee\thttps://github.com/jasonheesanglee'
 
     def __init__(self, cfg=None):
@@ -234,9 +234,9 @@ You can also modify configuration by calling update_config()
 
         Args:
             sentence : The sentence to extract emotion from.
-            original_emotion : optional : The pre-segmented emotion (positive, negative, neutral)
-            default_specific_emotion : optional : The pre-segmented specific emotion (love, thrilled, happy, sad, etc..)
-            normalized_emotion : optional : Normalized User input emotion (good food, bad person, lovely day, etc..)
+            original_emotion (str) -> optional : The pre-segmented emotion (positive, negative, neutral)
+            default_specific_emotion (str) -> optional : The pre-segmented specific emotion (love, thrilled, happy, sad, etc..)
+            normalized_emotion (str) -> optional : Normalized User input emotion (good food, bad person, lovely day, etc..)
 
         Returns:
             tuple: A tuple containing the general emotion and the specific emotion of the sentence.
@@ -710,18 +710,20 @@ You can also modify configuration by calling update_config()
 
         return word_scores
 
-    def word_emotions(self, sentence: str, emotion: str, specific_emotion: str):
+    def word_emotions(self, sentence: str, emotion: str = None, specific_emotion: str = None):
         """
         Segments a sentence and assigns emotions to each word based on the overall sentence emotion and specific emotion.
 
         Args:
             sentence (str): The sentence for segmentation.
-            emotion (str): The general emotion of the sentence.
-            specific_emotion (str): The specific emotion of the sentence.
+            emotion (str) -> Optional: The general emotion of the sentence.
+            specific_emotion (str) -> Optional: The specific emotion of the sentence.
 
         Returns:
             dict: A dictionary mapping each word in the sentence to its assigned emotion.
         """
+        if emotion == None or specific_emotion == None:
+              emotion, specific_emotion = self.get_emotion(sentence)
         pattern = '[^ㄱ-ㅣ가-힣a-zA-Z0-9+]'
         sentence = re.sub(pattern, ' ', sentence)
         dissimilarities = self.calculate_vector_differences(sentence, emotion, specific_emotion)
@@ -729,17 +731,21 @@ You can also modify configuration by calling update_config()
         word_sentiment_scores = self.assign_word_sentiment_scores(sentence, norm_senti_score)
         return word_sentiment_scores
 
-    def noun_emotions(self, sentence: str, emotion: str, specific_emotion: str, noun_list: list, count: bool = False):
+    def noun_emotions(self, sentence: str, noun_list: list, emotion:str = None, specific_emotion:str = None, count: bool=False):
         """
         Analyzes emotions associated with specific nouns within a sentence.
 
         Args:
             sentence (str): The sentence containing the nouns for emotion analysis.
+            emotion (str) -> Optional: The general emotion of the sentence.
+            specific_emotion (str) -> Optional: The specific emotion of the sentence.
             noun_list (list): A list of nouns to analyze within the sentence.
             count (bool) : True or False for switching on off counting the number of nouns in each segment.
         Returns:
             dict: A dictionary categorizing nouns into positive, neutral, and negative based on their associated emotions.
         """
+        if emotion == None or specific_emotion == None:
+            emotion, specific_emtion = self.get_emotion(sentence)
         word_emo_list = self.word_emotions(sentence, emotion, specific_emotion)
 
         pos = defaultdict(list)
@@ -750,7 +756,7 @@ You can also modify configuration by calling update_config()
         neut_count = defaultdict(int)
         neg_count = defaultdict(int)
 
-        for noun in list(set(noun_list)):
+        for noun in noun_list:
             for dict_ in word_emo_list:
                 for word, score in dict_.items():
                     if noun in word:
