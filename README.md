@@ -9,14 +9,24 @@ DanGam provides insights into the emotional tone of texts, aiming for more accur
 The name DanGam came from the abbreviation of "Word-Emotion" in Korean (단어-감정).
 
 > [!IMPORTANT]
-> Latest Version of the model is 0.0.130<br>
+> Latest Version of the model is 0.0.133<br>
 > GPU Enabled from Version 0.0.130
 
 ## Installation
-DanGam can be easily installed via pip. Simply run the following command in your terminal:<br>
+DanGam can be easily installed via pip.<br>Simply run the following command in your terminal:<br>
 ```shell
+
 pip install DanGam
 ```
+
+> [!TIP]<br>
+> Just in case if you encounter issues with other packages, try run the following command in your terminal before installing DanGam.<br>
+> If you still encounter any problems installing DanGam, please report it to me.
+```shell
+pip install torch numpy pandas tqdm transformers scipy regex
+```
+
+
 
 ## Features
 - **Sentence Emotion Segmentation**: DanGam segments sentences and identifies their overarching emotional tone (positive, negative, or neutral).
@@ -162,31 +172,44 @@ These scores are not just arbitrary numbers; they represent how closely each wor
 
 `get_emotion(sentence, origianl_emotion, default_specific_emotion, normalized_emotion)`:<br>
   Determines the overall emotion of a given sentence by analyzing it in chunks.<br>
-  Considers both the general and specific emotions to enhance accuracy.
-
-  - `sentence` : str - target sentence
-  - `original_emotion` : str - segment where default_specific_emotion belongs (positive, negative, neutral)
-  - `default_specific_emotion` : str - raw input by sentence composer (or detected by other sources)
-  - `normalized_emotion` : str - normalized default_specific_emotion
+  Considers both the general and specific emotions to enhance accuracy.<br>
   
-`match_rate_calc(df)`:<br>
-  Calculates the accuracy of emotion predictions in a dataframe by comparing predicted emotions with their original annotations.
-    
-  - `df` : DataFrame - target DataFrame
+  Arguments:
+    - `sentence` : str - *The sentence to extract the emotions from.*
+    - `original_emotion` (str) -> optional : *The pre-segmented emotion (positive, negative, neutral)*
+    - `default_specific_emotion` (str) -> optional : *The pre-segmented specific emotion (love, thrilled, happy, sad, etc..)*
+    - `normalized_emotion` (str) -> optional : *Normalized User input emotion (good food, bad person, lovely day, etc..)*
+  Returns:
+    - `emotion` (str) : *A string of overall emotion of the sentence. (positive, neutral, negative)*
+    - `specific_emotion` (str) : *A string of specific emotion of the sentence. (one out of 60 emotions)*
+
+> [!WARNING]<br>
+> Depreciated from `Ver 0.0.133`<br>
+>   ~~`match_rate_calc(df)`:<br>~~
+>     ~~Calculates the accuracy of emotion predictions in a dataframe by comparing predicted emotions with their original annotations.<br><br>~~
+
     
 `word_emotions(sentence, emotion, specific_emotion)`:<br>
-  Segments a sentence and assigns emotions to each word based on the overall sentence emotion and specific emotion.
-    
-  - `sentence` : str - target sentence
-  - `emotion` : str - emotion resulted from `get_emotion` module.
-  - `specific_emotion` : str - specific_emotion resulted from `get_emotion` module.
-    
+  Segments a sentence and assigns emotions to each word based on the overall sentence emotion and specific emotion.<br>
+  Args:<br>
+    - `sentence` (str): The sentence for segmentation.
+    -  `emotion` (str) -> Optional: The general emotion of the sentence.
+    -  `specific_emotion` (str) -> Optional: The specific emotion of the sentence.
+
+  Returns:
+      `dict`: A dictionary mapping each word in the sentence to its assigned emotion.
+
 `noun_emotions(sentence, noun_list, count)`:<br>
   Analyzes emotions associated with specific nouns within a sentence.
-    
-  - `sentence` : str - target sentence
-  - `noun_list` : list - list of nouns in the sentence.
-  - `count` : bool - if count is `True`, returns `noun_list`, `count_list`
+  Args:
+      `sentence` (str): The sentence containing the nouns for emotion analysis.
+      `emotion` (str) -> Optional: The general emotion of the sentence.
+      `specific_emotion` (str) -> Optional: The specific emotion of the sentence.
+      `noun_list` (list): A list of nouns to analyze within the sentence.
+      `count` (bool) : True or False for switching on off counting the number of nouns in each segment.
+  Returns:
+      `dict`: A dictionary categorizing nouns into positive, neutral, and negative based on their associated emotions.
+  
 
 ## Embedding Extraction and Analysis
 The function begins by extracting embeddings for each word in the sentence, as well as for the sentence as a whole.<br>Embeddings are essentially numerical representations that capture the semantic essence of words and sentences.<br>For a more nuanced analysis, it also considers specific emotion embeddings, which are representations of predefined emotional states or tones.<br>By comparing word embeddings with the sentence and emotion embeddings, the function can gauge the degree of emotional congruence or divergence each word has with the overall sentence sentiment.
