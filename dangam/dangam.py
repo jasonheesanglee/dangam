@@ -223,17 +223,20 @@ You can also modify configuration by calling update_config()
             yield ' '.join(tokens[i:i + chunk_size])
 
     def get_emotion(self,
-                    sentence: str,
-                    original_emotion: str = None,
-                    default_specific_emotion: str = None,
-                    normalized_emotion: str = None
-                    ):
+                sentence: str,
+                original_emotion: str = None,
+                default_specific_emotion: str = None,
+                normalized_emotion: str = None
+                ):
         """
         Determines the overall emotion of a given sentence by analyzing it in chunks.
         Considers both the general and specific emotions to enhance accuracy.
 
         Args:
-            sentence, original_emotion, default_specific_emotion, normalized_emotion : Parameters defining the sentence and its emotions.
+            sentence : The sentence to extract emotion from.
+            original_emotion : optional : The pre-segmented emotion (positive, negative, neutral)
+            default_specific_emotion : optional : The pre-segmented specific emotion (love, thrilled, happy, sad, etc..)
+            normalized_emotion : optional : Normalized User input emotion (good food, bad person, lovely day, etc..)
 
         Returns:
             tuple: A tuple containing the general emotion and the specific emotion of the sentence.
@@ -352,15 +355,19 @@ You can also modify configuration by calling update_config()
                     else:
                         emotion = 'neutral'
                     return emotion, specific_emotion
+
         else:
-            chunks = list(self.chunk_text(sentence, max_length=self.max_length/5))
+            chunks = list(self.chunk_text(sentence, max_length=int(self.max_length/5)))
             sum_prob = None
             num_chunks = 0
 
             for chunk_no in range(len(chunks)):
-                if chunk_no != len(chunks):
+                if chunk_no != len(chunks)-1:
                     inputs = self.tokenizer(chunks[chunk_no] + self.sep_token + chunks[chunk_no+1], return_tensors='pt',
                                             padding=self.padding, truncation=self.truncation)
+                else:
+                    inputs = self.tokenizer(chunks[chunk_no] + self.sep_token, return_tensors='pt',
+                        padding=self.padding, truncation=self.truncation)
                 inputs = {k: v.to(self.device) for k, v in inputs.items()}
 
                 with torch.no_grad():
@@ -395,7 +402,7 @@ You can also modify configuration by calling update_config()
             num_chunks = 0
 
             for chunk in chunks:
-                inputs = self.tokenizer(specific_emotion + self.sep_token + chunk, return_tensors='pt',
+                inputs = self.tokenizer(emotion + self.sep_token + specific_emotion + self.sep_token + chunk, return_tensors='pt',
                                         padding=self.padding, truncation=self.truncation)
 
                 inputs = {k: v.to(self.device) for k, v in inputs.items()}
@@ -419,97 +426,79 @@ You can also modify configuration by calling update_config()
                 sentiment_idx = avg_prob
 
             if sentiment_idx in self.neg_tag:
-                emotion = 'negative'
-                specific_emotion = self.emotion_label[sentiment_idx]
+                new_emotion = 'negative'
+                new_specific_emotion = self.emotion_label[sentiment_idx]
             elif sentiment_idx in self.pos_tag:
-                emotion = 'positive'
-                specific_emotion = self.emotion_label[sentiment_idx]
+                new_emotion = 'positive'
+                new_specific_emotion = self.emotion_label[sentiment_idx]
             else:
-                emotion = 'neutral'
-                specific_emotion = self.emotion_label[sentiment_idx]
+                new_emotion = 'neutral'
+                new_specific_emotion = self.emotion_label[sentiment_idx]
 
-            if original_emotion.strip() == emotion.strip():
-                return emotion, specific_emotion
+            if new_emotion.strip() == emotion.strip():
+                return new_emotion, new_specific_emotion
             else:
-            # return emotion, specific_emotion
-            ###########################################################################################################
-            ###########################################################################################################
-            ###########################################################################################################
-            ###########################################################################################################
-            ###########################################################################################################
-            ###########################################################################################################
-            ###########################################################################################################
-            ###########################################################################################################
-            emotion_counts = {'positive': 0, 'negative': 0}
+                # return emotion, specific_emotion
+                emotion_counts = {'positive': 0, 'negative': 0}
 
-            for chunk in chunks:
-                if normalized_emotion != '-':
-                    inputs = self.sub_tokenizer(specific_emotion + self.sep_token + chunk, return_tensors='pt',
-                                                padding=self.padding, truncation=self.truncation)
-                else:
-                    inputs = self.sub_tokenizer(default_specific_emotion + self.sep_token + chunk,
-                                                return_tensors='pt',
-                                                padding=self.padding, truncation=self.truncation)
-
-                inputs = {k: v.to(self.device) for k, v in inputs.items()}
-
-                with torch.no_grad():
-                    logits = self.sub_model(**inputs).logits
-                probabilities = torch.nn.functional.softmax(logits, dim=-1)
-                emotion_pred = probabilities.argmax().item()  ##### majority votes
-                if emotion_pred == 0:
-                    emotion_counts['negative'] += 1
-                elif emotion_pred == 1:
-                    emotion_counts['positive'] += 1
-
-            if emotion_counts['negative'] > emotion_counts['positive']:
-                emotion = 'negative'
-            elif emotion_counts['negative'] < emotion_counts['positive']:
-                emotion = 'positive'
-            else:
-                emotion = 'neutral'
-            specific_emotion = normalized_emotion
-            if original_emotion.strip() == emotion.strip():
-                return emotion, specific_emotion
-            else:  ############ 여기에 아예 catboost를 써볼까....??
-                sum_prob = None
-                num_chunks = 0
                 for chunk in chunks:
-                    if normalized_emotion != '-':
-                        inputs = self.sub_tokenizer(normalized_emotion + self.sep_token + chunk,
-                                                    return_tensors='pt',
-                                                    padding=self.padding, truncation=self.truncation)
-                    else:
-                        inputs = self.sub_tokenizer(default_specific_emotion + self.sep_token + chunk,
-                                                    return_tensors='pt', padding=self.padding,
-                                                    truncation=self.truncation)
+                    inputs = self.sub_tokenizer(emotion + self.sep_token + specific_emotion + self.sep_token + chunk, return_tensors='pt',
+                                                padding=self.padding, truncation=self.truncation)
 
                     inputs = {k: v.to(self.device) for k, v in inputs.items()}
 
                     with torch.no_grad():
                         logits = self.sub_model(**inputs).logits
                     probabilities = torch.nn.functional.softmax(logits, dim=-1)
-                    if sum_prob is None:
-                        sum_prob = probabilities
+                    emotion_pred = probabilities.argmax().item()  ##### majority votes
+                    if emotion_pred == 0:
+                        emotion_counts['negative'] += 1
+                    elif emotion_pred == 1:
+                        emotion_counts['positive'] += 1
+
+                if emotion_counts['negative'] > emotion_counts['positive']:
+                    new_emotion = 'negative'
+                elif emotion_counts['negative'] < emotion_counts['positive']:
+                    new_emotion = 'positive'
+                else:
+                    new_emotion = 'neutral'
+                if new_emotion.strip() == emotion.strip():
+                    return new_emotion, new_specific_emotion
+                else:  ############ 여기에 아예 catboost를 써볼까....??
+                    sum_prob = None
+                    num_chunks = 0
+                    for chunk in chunks:
+                        inputs = self.sub_tokenizer(emotion + self.sep_token + specific_emotion + self.sep_token + chunk,
+                                                    return_tensors='pt',
+                                                    padding=self.padding, truncation=self.truncation)
+
+                        inputs = {k: v.to(self.device) for k, v in inputs.items()}
+
+                        with torch.no_grad():
+                            logits = self.sub_model(**inputs).logits
+                        probabilities = torch.nn.functional.softmax(logits, dim=-1)
+                        if sum_prob is None:
+                            sum_prob = probabilities
+                        else:
+                            sum_prob += probabilities
+                        num_chunks += 1
+
+                    if num_chunks != 0 and sum_prob is not None:
+                        avg_prob = sum_prob / num_chunks
+                        emotion_ = avg_prob.argmax().item()
+
                     else:
-                        sum_prob += probabilities
-                    num_chunks += 1
+                        emotion_ = None
 
-                if num_chunks != 0 and sum_prob is not None:
-                    avg_prob = sum_prob / num_chunks
-                    emotion_ = avg_prob.argmax().item()
+                    if emotion_ == 0:
+                        new_emotion = 'negative'
 
-                else:
-                    emotion_ = None
+                    elif emotion_ == 1:
+                        new_emotion = 'positive'
+                    else:
+                        new_emotion = 'neutral'
+                    return new_emotion, new_specific_emotion
 
-                if emotion_ == 0:
-                    emotion = 'negative'
-
-                elif emotion_ == 1:
-                    emotion = 'positive'
-                else:
-                    emotion = 'neutral'
-                return emotion, specific_emotion
     def match_rate_calc(self, df):
         """
         Calculates the accuracy of emotion predictions in a dataframe by comparing predicted emotions
