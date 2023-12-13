@@ -13,7 +13,7 @@ class DanGamConfig:
         cfg_info(): Prints the detailed information about configuration options.
         check_default(): Prints the default configuration settings.
     """
-    VERSION = '0.0.133'
+    VERSION = '0.0.134'
     CREATED_BY = 'jasonheesanglee\thttps://github.com/jasonheesanglee'
 
     def cfg_info(self) -> None:

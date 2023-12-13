@@ -2,7 +2,6 @@ import re
 
 import torch
 import numpy as np
-from tqdm.auto import tqdm
 import torch.nn.functional as F
 from collections import defaultdict
 from .config import DanGamConfig
@@ -89,7 +88,7 @@ class DanGam:
         - Initialize the class with default or custom configuration.
         - Use its methods to perform detailed emotion segmentation and analysis in textual content.
     """
-    VERSION = '0.0.133'
+    VERSION = '0.0.134'
     CREATED_BY = 'jasonheesanglee\thttps://github.com/jasonheesanglee'
 
     def __init__(self, cfg=None):
@@ -498,37 +497,6 @@ You can also modify configuration by calling update_config()
                     else:
                         new_emotion = 'neutral'
                     return new_emotion, new_specific_emotion
-
-    # def match_rate_calc(self, df):
-    #     """
-    #     Calculates the accuracy of emotion predictions in a dataframe by comparing predicted emotions
-    #     with their original annotations.
-    #
-    #     Args:
-    #         df (DataFrame): A pandas DataFrame containing text data along with original and predicted emotion annotations.
-    #
-    #     Returns:
-    #         float: The match rate percentage indicating the accuracy of emotion predictions.
-    #     """
-    #     mat = 0
-    #     unmat = 0
-    #     for row_num in tqdm(range(df.shape[0])):
-    #         sentence = df.iloc[row_num][self.text_col]
-    #         original_emotion = df.iloc[row_num][self.ori_emo_col]
-    #         default_spec_emo = df.iloc[row_num][self.default_emo_col]
-    #         norm_spec_emo = df.iloc[row_num][self.normalized_emo_col]
-    #         pred_emotion, specified_emotion = self.get_emotion(sentence,
-    #                                                            original_emotion,
-    #                                                            default_spec_emo,
-    #                                                            norm_spec_emo
-    #                                                            )
-    #         if pred_emotion == original_emotion:
-    #             mat += 1
-    #         else:
-    #             unmat += 1
-    #     match_rate = mat / (mat + unmat) * 100
-    #
-    #     return match_rate
 
     def get_word_embeddings(self, sentence):
         """
