@@ -10,7 +10,9 @@ The name DanGam came from the abbreviation of "Word-Emotion" in Korean (단어-�
 
 > [!IMPORTANT]
 > Latest Version of the model is 0.0.134<br>
-> GPU Enabled from Version 0.0.130
+> GPU Enabled from Version 0.0.130<br>
+> You can now simply insert text to get the outcome (get_emotion & word_emotions)<br>
+> You can now simply insert text and wordlists to get the outcome (noun_emotions)
 
 ## Installation
 DanGam can be easily installed via pip.<br>Simply run the following command in your terminal:<br>
