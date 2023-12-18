@@ -88,7 +88,7 @@ class DanGam:
         - Initialize the class with default or custom configuration.
         - Use its methods to perform detailed emotion segmentation and analysis in textual content.
     """
-    VERSION = '0.0.134'
+    VERSION = '0.0.135'
     CREATED_BY = 'jasonheesanglee\thttps://github.com/jasonheesanglee'
 
     def __init__(self, cfg=None):
@@ -133,9 +133,9 @@ You can also modify configuration by calling update_config()
         Includes details about the models used, text and emotion column names, and other settings.
         """
         print(f"""
-'model_name' - The model that will run through the first loop of the sentence segmentation.\n
-'sub_model_name' - The model that will run through the second loop of the sentence segmentation.\n
-'word_senti_model_name' - The model that will run through the second loop of the sentence segmentation.\n
+'ko_model_name' - The model that will run through the first loop of the sentence segmentation.\n
+'ko_sub_model_name' - The model that will run through the second loop of the sentence segmentation.\n
+'ko_word_senti_model_name' - The model that will run through the second loop of the sentence segmentation.\n
 'text_col' - The name of the column that you want to segment the emotion.\n
 'default_emo_col' - Pre-labeled emotion by user.\n
 'ori_emo_col' - Pre-segmented emotions by user.
@@ -157,17 +157,17 @@ You can also modify configuration by calling update_config()
         """
         self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
-        self.tokenizer = AutoTokenizer.from_pretrained(self.cfg.model_name)
-        self.model = AutoModelForSequenceClassification.from_pretrained(self.cfg.model_name)
-        self.model.to(self.device)
+        self.ko_tokenizer = AutoTokenizer.from_pretrained(self.cfg.ko_model_name)
+        self.ko_model = AutoModelForSequenceClassification.from_pretrained(self.cfg.ko_model_name)
+        self.ko_model.to(self.device)
 
-        self.sub_tokenizer = AutoTokenizer.from_pretrained(self.cfg.sub_model_name)
-        self.sub_model = AutoModelForSequenceClassification.from_pretrained(self.cfg.sub_model_name)
-        self.sub_model.to(self.device)
+        self.ko_sub_tokenizer = AutoTokenizer.from_pretrained(self.cfg.ko_sub_model_name)
+        self.ko_sub_model = AutoModelForSequenceClassification.from_pretrained(self.cfg.ko_sub_model_name)
+        self.ko_sub_model.to(self.device)
 
-        self.word_senti_tokenizer = AutoTokenizer.from_pretrained(self.cfg.word_senti_model_name)
-        self.word_senti_model = AutoModel.from_pretrained(self.cfg.word_senti_model_name)
-        self.word_senti_model.to(self.device)
+        self.ko_word_senti_tokenizer = AutoTokenizer.from_pretrained(self.cfg.ko_word_senti_model_name)
+        self.ko_word_senti_model = AutoModel.from_pretrained(self.cfg.ko_word_senti_model_name)
+        self.ko_word_senti_model.to(self.device)
 
         self.text_col = self.cfg.text_col
         self.ori_emo_col = self.cfg.original_emotion_column
@@ -215,7 +215,7 @@ You can also modify configuration by calling update_config()
         Yields:
             str: Chunks of the original text.
         """
-        tokens = self.tokenizer.tokenize(text)
+        tokens = self.ko_tokenizer.tokenize(text)
         chunk_size = max_length - 2
         for i in range(0, len(tokens), chunk_size):
             yield ' '.join(tokens[i:i + chunk_size])
@@ -247,16 +247,16 @@ You can also modify configuration by calling update_config()
 
             for chunk in chunks:
                 if normalized_emotion != '-':
-                    inputs = self.tokenizer(normalized_emotion + self.sep_token + chunk, return_tensors='pt',
+                    inputs = self.ko_tokenizer(normalized_emotion + self.sep_token + chunk, return_tensors='pt',
                                             padding=self.padding, truncation=self.truncation)
                 else:
-                    inputs = self.tokenizer(default_specific_emotion + self.sep_token + chunk, return_tensors='pt',
+                    inputs = self.ko_tokenizer(default_specific_emotion + self.sep_token + chunk, return_tensors='pt',
                                             padding=self.padding, truncation=self.truncation)
 
                 inputs = {k: v.to(self.device) for k, v in inputs.items()}
 
                 with torch.no_grad():
-                    logits = self.model(**inputs).logits
+                    logits = self.ko_model(**inputs).logits
 
                 probabilities = torch.nn.functional.softmax(logits, dim=-1)
 
@@ -290,16 +290,16 @@ You can also modify configuration by calling update_config()
 
                 for chunk in chunks:
                     if normalized_emotion != '-':
-                        inputs = self.sub_tokenizer(normalized_emotion + self.sep_token + chunk, return_tensors='pt',
+                        inputs = self.ko_sub_tokenizer(normalized_emotion + self.sep_token + chunk, return_tensors='pt',
                                                     padding=self.padding, truncation=self.truncation)
                     else:
-                        inputs = self.sub_tokenizer(default_specific_emotion + self.sep_token + chunk, return_tensors='pt',
+                        inputs = self.ko_sub_tokenizer(default_specific_emotion + self.sep_token + chunk, return_tensors='pt',
                                                     padding=self.padding, truncation=self.truncation)
 
                     inputs = {k: v.to(self.device) for k, v in inputs.items()}
 
                     with torch.no_grad():
-                        logits = self.sub_model(**inputs).logits
+                        logits = self.ko_sub_model(**inputs).logits
                     probabilities = torch.nn.functional.softmax(logits, dim=-1)
                     emotion_pred = probabilities.argmax().item()  ##### majority votes
                     if emotion_pred == 0:
@@ -321,17 +321,17 @@ You can also modify configuration by calling update_config()
                     num_chunks = 0
                     for chunk in chunks:
                         if normalized_emotion != '-':
-                            inputs = self.sub_tokenizer(normalized_emotion + self.sep_token + chunk, return_tensors='pt',
+                            inputs = self.ko_sub_tokenizer(normalized_emotion + self.sep_token + chunk, return_tensors='pt',
                                                         padding=self.padding, truncation=self.truncation)
                         else:
-                            inputs = self.sub_tokenizer(default_specific_emotion + self.sep_token + chunk,
+                            inputs = self.ko_sub_tokenizer(default_specific_emotion + self.sep_token + chunk,
                                                         return_tensors='pt', padding=self.padding,
                                                         truncation=self.truncation)
 
                         inputs = {k: v.to(self.device) for k, v in inputs.items()}
 
                         with torch.no_grad():
-                            logits = self.sub_model(**inputs).logits
+                            logits = self.ko_sub_model(**inputs).logits
                         probabilities = torch.nn.functional.softmax(logits, dim=-1)
                         if sum_prob is None:
                             sum_prob = probabilities
@@ -362,15 +362,15 @@ You can also modify configuration by calling update_config()
 
             for chunk_no in range(len(chunks)):
                 if chunk_no != len(chunks)-1:
-                    inputs = self.tokenizer(chunks[chunk_no] + self.sep_token + chunks[chunk_no+1], return_tensors='pt',
+                    inputs = self.ko_tokenizer(chunks[chunk_no] + self.sep_token + chunks[chunk_no+1], return_tensors='pt',
                                             padding=self.padding, truncation=self.truncation)
                 else:
-                    inputs = self.tokenizer(chunks[chunk_no] + self.sep_token, return_tensors='pt',
+                    inputs = self.ko_tokenizer(chunks[chunk_no] + self.sep_token, return_tensors='pt',
                         padding=self.padding, truncation=self.truncation)
                 inputs = {k: v.to(self.device) for k, v in inputs.items()}
 
                 with torch.no_grad():
-                    logits = self.model(**inputs).logits
+                    logits = self.ko_model(**inputs).logits
 
                 probabilities = torch.nn.functional.softmax(logits, dim=-1)
 
@@ -401,13 +401,13 @@ You can also modify configuration by calling update_config()
             num_chunks = 0
 
             for chunk in chunks:
-                inputs = self.tokenizer(emotion + self.sep_token + specific_emotion + self.sep_token + chunk, return_tensors='pt',
+                inputs = self.ko_tokenizer(emotion + self.sep_token + specific_emotion + self.sep_token + chunk, return_tensors='pt',
                                         padding=self.padding, truncation=self.truncation)
 
                 inputs = {k: v.to(self.device) for k, v in inputs.items()}
 
                 with torch.no_grad():
-                    logits = self.model(**inputs).logits
+                    logits = self.ko_model(**inputs).logits
 
                 probabilities = torch.nn.functional.softmax(logits, dim=-1)
 
@@ -441,13 +441,13 @@ You can also modify configuration by calling update_config()
                 emotion_counts = {'positive': 0, 'negative': 0}
 
                 for chunk in chunks:
-                    inputs = self.sub_tokenizer(emotion + self.sep_token + specific_emotion + self.sep_token + chunk, return_tensors='pt',
+                    inputs = self.ko_sub_tokenizer(emotion + self.sep_token + specific_emotion + self.sep_token + chunk, return_tensors='pt',
                                                 padding=self.padding, truncation=self.truncation)
 
                     inputs = {k: v.to(self.device) for k, v in inputs.items()}
 
                     with torch.no_grad():
-                        logits = self.sub_model(**inputs).logits
+                        logits = self.ko_sub_model(**inputs).logits
                     probabilities = torch.nn.functional.softmax(logits, dim=-1)
                     emotion_pred = probabilities.argmax().item()  ##### majority votes
                     if emotion_pred == 0:
@@ -467,14 +467,14 @@ You can also modify configuration by calling update_config()
                     sum_prob = None
                     num_chunks = 0
                     for chunk in chunks:
-                        inputs = self.sub_tokenizer(emotion + self.sep_token + specific_emotion + self.sep_token + chunk,
+                        inputs = self.ko_sub_tokenizer(emotion + self.sep_token + specific_emotion + self.sep_token + chunk,
                                                     return_tensors='pt',
                                                     padding=self.padding, truncation=self.truncation)
 
                         inputs = {k: v.to(self.device) for k, v in inputs.items()}
 
                         with torch.no_grad():
-                            logits = self.sub_model(**inputs).logits
+                            logits = self.ko_sub_model(**inputs).logits
                         probabilities = torch.nn.functional.softmax(logits, dim=-1)
                         if sum_prob is None:
                             sum_prob = probabilities
@@ -509,13 +509,13 @@ You can also modify configuration by calling update_config()
         Returns:
             tuple: A tuple containing word embeddings and offset mappings.
         """
-        inputs = self.word_senti_tokenizer(sentence, return_tensors="pt", max_length=self.max_length,
+        inputs = self.ko_word_senti_tokenizer(sentence, return_tensors="pt", max_length=self.max_length,
                                            truncation=self.truncation, padding='max_length',
                                            return_offsets_mapping=True)
         offset_mapping = inputs.pop('offset_mapping')
         inputs = {k: v.to(self.device) for k, v in inputs.items()}
         with torch.no_grad():
-            outputs = self.word_senti_model(**inputs)
+            outputs = self.ko_word_senti_model(**inputs)
         embeddings = outputs.last_hidden_state
         return embeddings, offset_mapping
 
@@ -530,12 +530,12 @@ You can also modify configuration by calling update_config()
         Returns:
             torch.Tensor: The computed sentence embedding.
         """
-        inputs = self.word_senti_tokenizer(sentence, return_tensors="pt", max_length=self.max_length,
+        inputs = self.ko_word_senti_tokenizer(sentence, return_tensors="pt", max_length=self.max_length,
                                            truncation=self.truncation,
                                            padding="max_length")
         inputs = {k: v.to(self.device) for k, v in inputs.items()}
         with torch.no_grad():
-            outputs = self.word_senti_model(**inputs)
+            outputs = self.ko_word_senti_model(**inputs)
         # Average the token embeddings to get the sentence embedding
         sentence_embedding = outputs.last_hidden_state[:, 0, :]
         return sentence_embedding
@@ -550,11 +550,11 @@ You can also modify configuration by calling update_config()
         Returns:
             torch.Tensor: The embedding of the specified emotion.
         """
-        inputs = self.word_senti_tokenizer(emotion, return_tensors='pt', padding=self.padding,
+        inputs = self.ko_word_senti_tokenizer(emotion, return_tensors='pt', padding=self.padding,
                                            truncation=self.truncation)
         inputs = {k: v.to(self.device) for k, v in inputs.items()}
         with torch.no_grad():
-            outputs = self.word_senti_model(**inputs)
+            outputs = self.ko_word_senti_model(**inputs)
         return outputs.last_hidden_state.mean(dim=1)
 
     def get_specific_emotion_embedding(self, specific_emotion):
@@ -567,11 +567,11 @@ You can also modify configuration by calling update_config()
         Returns:
             torch.Tensor: The embedding of the specified specific emotion.
         """
-        inputs = self.word_senti_tokenizer(specific_emotion, return_tensors='pt', padding=self.padding,
+        inputs = self.ko_word_senti_tokenizer(specific_emotion, return_tensors='pt', padding=self.padding,
                                            truncation=self.truncation)
         inputs = {k: v.to(self.device) for k, v in inputs.items()}
         with torch.no_grad():
-            outputs = self.word_senti_model(**inputs)
+            outputs = self.ko_word_senti_model(**inputs)
         return outputs.last_hidden_state.mean(dim=1)
 
     def calculate_vector_differences(self, sentence, emotion, specific_emotion):
@@ -650,9 +650,9 @@ You can also modify configuration by calling update_config()
         Returns:
             dict: A dictionary mapping each word in the sentence to its sentiment score.
         """
-        encoded = self.word_senti_tokenizer.encode_plus(sentence, return_tensors='pt', truncation=self.truncation,
+        encoded = self.ko_word_senti_tokenizer.encode_plus(sentence, return_tensors='pt', truncation=self.truncation,
                                                         padding='max_length', max_length=512)
-        tokenized_words = self.word_senti_tokenizer.convert_ids_to_tokens(encoded['input_ids'][0])
+        tokenized_words = self.ko_word_senti_tokenizer.convert_ids_to_tokens(encoded['input_ids'][0])
         word_scores = []
         current_word = ""
         current_score = 0

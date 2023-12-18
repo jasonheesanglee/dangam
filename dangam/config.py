@@ -13,14 +13,14 @@ class DanGamConfig:
         cfg_info(): Prints the detailed information about configuration options.
         check_default(): Prints the default configuration settings.
     """
-    VERSION = '0.0.134'
+    VERSION = '0.0.135'
     CREATED_BY = 'jasonheesanglee\thttps://github.com/jasonheesanglee'
 
     def cfg_info(self) -> None:
         print(f"""
-'model_name' - The model that will run through the first loop of the sentence segmentation.
-'sub_model_name' - The model that will run through the second loop of the sentence segmentation.
-'word_senti_model_name' - The model that will through the loop of the word segmentation.
+'ko_model_name' - The model that will run through the first loop of the sentence segmentation.
+'ko_sub_model_name' - The model that will run through the second loop of the sentence segmentation.
+'ko_word_senti_model_name' - The model that will through the loop of the word segmentation.
 'text_col' - The name of the column that you want to segment the emotion.
 'default_emotion_column' - Pre-labeled emotion by user.
 'original_emotion_column' - Pre-segmented emotions by user.
@@ -45,12 +45,12 @@ class DanGamConfig:
 
     def check_default(self):
         return """
-'model_name': 'hun3359/klue-bert-base-sentiment',
+'ko_model_name': 'hun3359/klue-bert-base-sentiment',
 \tBetter if you stick to this.
 This is one of the only options that segments Korean sentences into 60 sentiment labels.
-'sub_model_name': 'WhitePeak/bert-base-cased-Korean-sentiment'
+'ko_sub_model_name': 'WhitePeak/bert-base-cased-Korean-sentiment'
 \tAny model that supports Positive/Negative segmentation will work.
-'word_senti_model_name': 'WhitePeak/bert-base-cased-Korean-sentiment'
+'ko_word_senti_model_name': 'WhitePeak/bert-base-cased-Korean-sentiment'
 \tAny model that supports Positive/Negative segmentation will work.
 'text_col': 'text'
 \tYou need to modify this if your col name is not 'text'.
@@ -89,9 +89,9 @@ This is one of the only options that segments Korean sentences into 60 sentiment
                                   If provided, it overrides the default settings.
         """
         config = {
-            'model_name': 'hun3359/klue-bert-base-sentiment',
-            'sub_model_name': 'WhitePeak/bert-base-cased-Korean-sentiment',
-            'word_senti_model_name': 'WhitePeak/bert-base-cased-Korean-sentiment',
+            'ko_model_name': 'hun3359/klue-bert-base-sentiment',
+            'ko_sub_model_name': 'WhitePeak/bert-base-cased-Korean-sentiment',
+            'ko_word_senti_model_name': 'WhitePeak/bert-base-cased-Korean-sentiment',
             'text_col': 'text',
             'original_emotion_column': 'posneg',
             'default_emotion_column': 'default_emotion',
@@ -114,9 +114,9 @@ This is one of the only options that segments Korean sentences into 60 sentiment
             if isinstance(cfg, dict):
                 config.update(cfg)
 
-        self.model_name = config['model_name']
-        self.sub_model_name = config['sub_model_name']
-        self.word_senti_model_name = config['word_senti_model_name']
+        self.ko_model_name = config['ko_model_name']
+        self.ko_sub_model_name = config['ko_sub_model_name']
+        self.ko_word_senti_model_name = config['ko_word_senti_model_name']
         self.text_col = config['text_col']
         self.original_emotion_column = config['original_emotion_column']
         self.normalized_emotion_column = config['normalized_emotion_column']
@@ -139,9 +139,9 @@ This is one of the only options that segments Korean sentences into 60 sentiment
         Returns the current configuration as a dictionary.
         """
         return {
-            'model_name': self.model_name,
-            'sub_model_name': self.sub_model_name,
-            'word_senti_model': self.word_senti_model_name,
+            'model_name': self.ko_model_name,
+            'sub_model_name': self.ko_sub_model_name,
+            'word_senti_model': self.ko_word_senti_model_name,
             'original_emotion_column' : self.original_emotion_column,
             'text_col' : self.text_col,
             'default_emotion_col' : self.default_emotion_column,
