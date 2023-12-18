@@ -3,9 +3,12 @@ import re
 import torch
 import numpy as np
 import torch.nn.functional as F
-from collections import defaultdict
 from .config import DanGamConfig
+from collections import defaultdict
+from lingua import Language, LanguageDetectorBuilder
 from transformers import AutoTokenizer, AutoModelForSequenceClassification, AutoModel
+lingua_languages = [Language.ENGLISH, Language.INDONESIAN, Language.KOREAN, Language.CHINESE, Language.JAPANESE, Language.TAGALOG]
+lingua_detection = LanguageDetectorBuilder.from_languages(*lingua_languages).build()
 
 
 class DotDict(dict):
@@ -186,6 +189,47 @@ You can also modify configuration by calling update_config()
         self.spec_wt_reach_th = self.cfg.specific_weight_reach_threshold
         self.spec_wt_n_reach_th = self.cfg.specific_weight_not_reach_threshold
         self.noun_th = self.cfg.noun_threshold
+
+    def lang_conf_rate(self, text):
+        conf_rate = {}
+        try:
+            for word in text.split():
+                possible_lang = lingua_detection.compute_language_confidence_values(word)
+                for confidence in possible_lang:
+                    try:
+                        conf_rate[confidence.language.name] += confidence.value
+                    except KeyError:
+                        conf_rate[confidence.language.name] = confidence.value
+
+            conf_rate_per = {}
+            for key, value in conf_rate.items():
+                if sum(conf_rate.values()) != 0:
+                    conf_rate_per[key] = value / sum(conf_rate.values())
+                else:
+                    conf_rate_per[key] = 0
+            return conf_rate_per
+        except:
+            pass
+
+    def lang_detector(self, text):
+        text_lang = None
+        try:
+            lang_ratio = self.lang_conf_rate(text)
+
+            max_rate = 0
+            lang_temp = {}
+            for lang, rate in lang_ratio.items():
+                if rate > max_rate:
+                    max_rate = rate
+                    text_lang = lang
+                    lang_temp = {lang: rate}
+                elif rate == max_rate:
+                    lang_temp[lang] = rate
+            if 'JAPANESE' in lang_temp and 'CHINESE' in lang_temp and lang_temp['JAPANESE'] == lang_temp['CHINESE']:
+                text_lang = 'JAPANESE'
+            return text_lang
+        except:
+            return 'unidentified'
 
     def update_config(self, new_config):
         """
