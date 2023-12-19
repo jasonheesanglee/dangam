@@ -9,9 +9,10 @@ DanGam provides insights into the emotional tone of texts, aiming for more accur
 The name DanGam came from the abbreviation of "Word-Emotion" in Korean (단어-감정).
 
 > [!IMPORTANT]
-> Latest Version of the model is 0.0.134<br>
+> Latest Version of the model is 0.0.137<br>
+> DanGam Supports English from Version 0.0.137<br>
 > GPU Enabled from Version 0.0.130<br>
-> You can now simply insert text to get the outcome (get_emotion & word_emotions)<br>
+> You can now simply insert text to get the outcome (word_emotions)<br>
 > You can now simply insert text and wordlists to get the outcome (noun_emotions)
 
 ## Installation
@@ -54,7 +55,7 @@ default_emotion = "good food"
 normalized_specific_emotion = "satisfied"
 
 # Analyze the emotion of the sentence
-emotion, specified_emotion = dangam.get_emotion(text, original_emotion, default_emotion, normalized_specific_emotion)
+emotion, specified_emotion = dangam.get_emotion(text, original_emotion, default_emotion, normalized_specific_emotion, 'KOREAN')
 
 print("Sentence Emotion:", emotion)
 print("Specified Emotion:", specified_emotion)
@@ -108,37 +109,23 @@ You can modify various settings like model names, column names, etc., to fit you
   <details>
     <summary>List of modifiable configurations</summary>
       
-      - model_name
-        - The model that will run through the first loop of the sentence segmentation.
+      - ko_model_name
+        - The model that will run through the first loop of the Korean sentence segmentation.
   
-      - sub_model_name
-        - The model that will run through the second loop of the sentence segmentation.
+      - ko_sub_model_name
+        - The model that will run through the second loop of the Korean sentence segmentation.
   
-      - word_senti_model_name
-        - The model that will through the loop of the word segmentation.
+      - ko_word_senti_model_name
+        - The model that will through the loop of the Korean word segmentation.
+
+      - en_model_name
+        - The model that will run through the first loop of the English sentence segmentation.
   
-      - text_col
-        - The name of the column that you want to segment the emotion.
+      - en_sub_model_name
+        - The model that will run through the second loop of the English sentence segmentation.
   
-      - default_emotion_column
-        - Pre-labeled emotion by user.
-  
-      - original_emotion_column
-        - Pre-segmented emotions by user.
-        - Performs the best if this section is segmented into 'positive', 'negative', 'neutral'.
-        - Used for accuracy evaluation.
-  
-      - normalized_emotion_column
-        - Normalized pre-labeled emotion.
-        - Performs the best if this section is in English.
-        - Directly used from the second loop, since it will only segment positive, negative, neutral.
-        - Not into 60 different emotions.
-  
-      - sentence_emotion_column
-        - The column name of sentence emotion (pos/neg/neut) you want this module to set.
-  
-      - sentence_specific_emotion_column
-        - The column name of sentence emotion (pos/neg/neut) you want this module to set.
+      - en_word_senti_model_name
+        - The model that will through the loop of the English word segmentation.
   
       - truncation
         - Turning on and off Truncation throughout the module.
@@ -172,7 +159,7 @@ You can modify various settings like model names, column names, etc., to fit you
 The primary objective of `word_segmentator` is to assign sentiment scores to each word in a given sentence.<br>
 These scores are not just arbitrary numbers; they represent how closely each word aligns with the overall emotional tone of the sentence.<br>This process involves several steps, starting from embedding extraction to sentiment score normalization.<br><br>
 
-`get_emotion(sentence, origianl_emotion, default_specific_emotion, normalized_emotion)`:<br>
+`get_emotion(sentence, origianl_emotion, default_specific_emotion, normalized_emotion, language)`:<br>
   Determines the overall emotion of a given sentence by analyzing it in chunks.<br>
   Considers both the general and specific emotions to enhance accuracy.<br>
   
@@ -181,14 +168,10 @@ These scores are not just arbitrary numbers; they represent how closely each wor
     - `original_emotion` (str) -> optional : *The pre-segmented emotion (positive, negative, neutral)*
     - `default_specific_emotion` (str) -> optional : *The pre-segmented specific emotion (love, thrilled, happy, sad, etc..)*
     - `normalized_emotion` (str) -> optional : *Normalized User input emotion (good food, bad person, lovely day, etc..)*
+    - `language` (str) -> optional : *Either `KOREAN` or `ENGLISH`*
   Returns:
     - `emotion` (str) : *A string of overall emotion of the sentence. (positive, neutral, negative)*
     - `specific_emotion` (str) : *A string of specific emotion of the sentence. (one out of 60 emotions)*
-
-> [!WARNING]<br>
-> Depreciated from `Ver 0.0.133`<br>
->   ~~`match_rate_calc(df)`:<br>~~
->     ~~Calculates the accuracy of emotion predictions in a dataframe by comparing predicted emotions with their original annotations.<br><br>~~
 
     
 `word_emotions(sentence, emotion, specific_emotion)`:<br>
@@ -197,18 +180,20 @@ These scores are not just arbitrary numbers; they represent how closely each wor
     - `sentence` (str): The sentence for segmentation.
     -  `emotion` (str) -> Optional: The general emotion of the sentence.
     -  `specific_emotion` (str) -> Optional: The specific emotion of the sentence.
-
+    - `language` (str) -> optional : *Either `KOREAN` or `ENGLISH`*
   Returns:
       `dict`: A dictionary mapping each word in the sentence to its assigned emotion.
 
-`noun_emotions(sentence, noun_list, count)`:<br>
+`noun_emotions(sentence, noun_list, count, language)`:<br>
   Analyzes emotions associated with specific nouns within a sentence.
   Args:
-      `sentence` (str): The sentence containing the nouns for emotion analysis.
-      `emotion` (str) -> Optional: The general emotion of the sentence.
-      `specific_emotion` (str) -> Optional: The specific emotion of the sentence.
-      `noun_list` (list): A list of nouns to analyze within the sentence.
-      `count` (bool) : True or False for switching on off counting the number of nouns in each segment.
+      - `sentence` (str): The sentence containing the nouns for emotion analysis.
+      - `emotion` (str) -> Optional: The general emotion of the sentence.
+      - `specific_emotion` (str) -> Optional: The specific emotion of the sentence.
+      - `noun_list` (list): A list of nouns to analyze within the sentence.
+      - `count` (bool) default -> False : True or False for switching on off counting the number of nouns in each segment.
+      - `language` (str) -> optional : *Either `KOREAN` or `ENGLISH`*
+
   Returns:
       `dict`: A dictionary categorizing nouns into positive, neutral, and negative based on their associated emotions.
   
