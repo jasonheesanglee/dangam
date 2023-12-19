@@ -7,7 +7,8 @@ from .config import DanGamConfig
 from collections import defaultdict
 from lingua import Language, LanguageDetectorBuilder
 from transformers import AutoTokenizer, AutoModelForSequenceClassification, AutoModel
-lingua_languages = [Language.ENGLISH, Language.INDONESIAN, Language.KOREAN, Language.CHINESE, Language.JAPANESE, Language.TAGALOG]
+# lingua_languages = Language.all()
+lingua_languages = [Language.ENGLISH, Language.KOREAN]
 lingua_detection = LanguageDetectorBuilder.from_languages(*lingua_languages).build()
 
 
@@ -18,7 +19,7 @@ class DotDict(dict):
     __delattr__ = dict.__delitem__
 
 
-emotion_labels = {
+emotion_labels_ko = {
     0: "rage", 1: "whining", 2: "frustrated", 3: "irritated",
     4: "defensive", 5: "spiteful", 6: "restless", 7: "disgusted",
     8: "displeased", 9: "annoyed", 10: "sad", 11: "disappointed",
@@ -36,7 +37,7 @@ emotion_labels = {
     56: "relaxed", 57: "relieved", 58: "excited", 59: "confident"
 }
 
-emotion_labels_ko = {
+emotion_labels_en_ko = {
     "rage": "분노", "whining": "툴툴대는", 'frustrated': "좌절한", 'irritated': "짜증내는",
     'defensive': "방어적인", 'spiteful': "악의적인", 'restless': "안달하는", 'disgusted': "구역질 나는",
     'displeased': "노여워하는", 'annoyed': "성가신", 'sad': "슬픔", 'disappointed': "실망한",
@@ -53,14 +54,26 @@ emotion_labels_ko = {
     'trusting': "신뢰하는", 'comfortable': "편안한", 'satisfying': "만족스러운", 'thrilled': "흥분",
     'relaxed': "느긋한", 'relieved': "안도하는", 'excited': "신이 난", 'confident': "자신하는"
 }
-
-neg_tag = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9,
+neg_tag_ko = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9,
            10, 11, 12, 13, 14, 15, 16, 18, 19,
            20, 21, 22, 23, 24, 25, 26, 27,
            30, 32, 34, 35, 36, 37, 38, 39,
            40, 41, 43, 44, 45, 46, 47, 48, 49]
-pos_tag = [50, 51, 52, 53, 54, 55, 56, 57, 58, 59]
-neut_tag = [17, 28, 29, 31, 33, 42]
+pos_tag_ko = [50, 51, 52, 53, 54, 55, 56, 57, 58, 59]
+neut_tag_ko = [17, 28, 29, 31, 33, 42]
+
+emotion_labels_en = {
+    0: "admiration", 1: "amusement", 2: "anger", 3: "annoyance",
+    4: "approval", 5: "caring", 6: "confusion", 7: "curiosity",
+    8: "desire", 9: "disappointment", 10: "disapproval", 11: "disgust",
+    12: "embarrassment", 13: "excitement", 14: "fear", 15: "gratitude",
+    16: "grief", 17: "joy", 18: "love", 19: "nervousness",
+    20: "optimism", 21: "pride", 22: "realization", 23: "relief",
+    24: "remorse", 25: "sadness", 26: "surprise", 27: "neutral"
+}
+neg_tag_en = [2, 3, 6, 9, 10, 11, 12, 14, 16, 24, 25]
+pos_tag_en = [0, 1, 4, 5, 8, 13, 15, 17, 18, 20, 21, 23, 26]
+neut_tag_en = [7, 19, 22, 27]
 
 
 # noinspection PyTypeChecker
@@ -72,10 +85,12 @@ class DanGam:
 
     Attributes:
         cfg (DotDict): Configuration settings for the DanGam instance.
-        model (AutoModelForSequenceClassification): Primary model for general emotion classification.
-        sub_model (AutoModelForSequenceClassification): Secondary model for more detailed emotion classification.
-        word_senti_model (AutoModel): Model dedicated to word-level sentiment analysis.
-        original_emotion_column, text_col, default_emotion_column, normalized_emotion_column, sentence_emotion_column, sentence_specific_emotion_column (str): Column names for various data attributes, configurable as per user needs.
+        ko_model_name (AutoModelForSequenceClassification): Primary model for general Korean emotion classification.
+        ko_sub_model_name (AutoModelForSequenceClassification): Secondary model for more detailed English emotion classification.
+        ko_word_senti_model_name (AutoModel): Model dedicated to Korean word-level sentiment analysis.
+        en_model_name (AutoModelForSequenceClassification): Primary model for general English emotion classification.
+        en_sub_model_name (AutoModelForSequenceClassification): Secondary model for more detailed English emotion classification.
+        en_word_senti_model_name (AutoModel): Model dedicated to English word-level sentiment analysis.
 
     Methods:
         cfg_info(): Displays the current configuration settings of the DanGam instance.
@@ -91,7 +106,7 @@ class DanGam:
         - Initialize the class with default or custom configuration.
         - Use its methods to perform detailed emotion segmentation and analysis in textual content.
     """
-    VERSION = '0.0.135'
+    VERSION = '0.0.136'
     CREATED_BY = 'jasonheesanglee\thttps://github.com/jasonheesanglee'
 
     def __init__(self, cfg=None):
@@ -124,11 +139,14 @@ You can also modify configuration by calling update_config()
             # print('good')
         self.initialize_models()
         self.sep_token = ' >>>> '
-        self.emotion_label = emotion_labels
-        self.emotion_label_ko = emotion_labels
-        self.pos_tag = pos_tag
-        self.neut_tag = neut_tag
-        self.neg_tag = neg_tag
+        self.emotion_label_ko = emotion_labels_ko
+        self.emotion_label_en = emotion_labels_en
+        self.pos_tag_ko = pos_tag_ko
+        self.neut_tag_ko = neut_tag_ko
+        self.neg_tag_ko = neg_tag_ko
+        self.pos_tag_en = pos_tag_en
+        self.neut_tag_en = neut_tag_en
+        self.neg_tag_en = neg_tag_en
 
     def config_info(self):
         """
@@ -136,18 +154,12 @@ You can also modify configuration by calling update_config()
         Includes details about the models used, text and emotion column names, and other settings.
         """
         print(f"""
-'ko_model_name' - The model that will run through the first loop of the sentence segmentation.\n
-'ko_sub_model_name' - The model that will run through the second loop of the sentence segmentation.\n
-'ko_word_senti_model_name' - The model that will run through the second loop of the sentence segmentation.\n
-'text_col' - The name of the column that you want to segment the emotion.\n
-'default_emo_col' - Pre-labeled emotion by user.\n
-'ori_emo_col' - Pre-segmented emotions by user.
-\tPerforms the best if this section is segmented into 'positive', 'negative', 'neutral'.
-\tUsed for accuracy evaluation.\n
-'normalized_emo_col' - Normalized pre-labeled emotion.
-\tPerforms the best if this section is in English.
-\tDirectly used from the second loop, since it will only segment positive, negative, neutral.
-\tNot into 60 different emotions.\n
+'ko_model_name' - The model that will run through the first loop of the Korean sentence segmentation.
+'ko_sub_model_name' - The model that will run through the second loop of the Korean sentence segmentation.
+'ko_word_senti_model_name' - The model that will through the loop of the Korean word segmentation.
+'en_model_name' - The model that will run through the first loop of the English sentence segmentation.
+'en_sub_model_name' - The model that will run through the second loop of the English sentence segmentation.
+'en_word_senti_model_name' - The model that will through the loop of the English word segmentation.
 'truncation' - Bool : Turning on and off Truncation throughout the module.\n 
 'sent_emo_col' - The column name of sentence emotion (pos/neg/neut) you want this module to set.\n
 'sent_spec_emo_col' - The column name of sentence emotion (pos/neg/neut) you want this module to set.\n
@@ -159,6 +171,8 @@ You can also modify configuration by calling update_config()
         Initialize models based on the current configuration.
         """
         self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+
+        ### Korean
 
         self.ko_tokenizer = AutoTokenizer.from_pretrained(self.cfg.ko_model_name)
         self.ko_model = AutoModelForSequenceClassification.from_pretrained(self.cfg.ko_model_name)
@@ -172,13 +186,23 @@ You can also modify configuration by calling update_config()
         self.ko_word_senti_model = AutoModel.from_pretrained(self.cfg.ko_word_senti_model_name)
         self.ko_word_senti_model.to(self.device)
 
-        self.text_col = self.cfg.text_col
-        self.ori_emo_col = self.cfg.original_emotion_column
-        self.normalized_emo_col = self.cfg.normalized_emotion_column
+        ### English
 
-        self.default_emo_col = self.cfg.default_emotion_column
-        self.sent_emo_col = self.cfg.sentence_emotion_column
-        self.sent_spec_emo_col = self.cfg.sentence_specific_emotion_column
+        self.en_tokenizer = AutoTokenizer.from_pretrained(self.cfg.en_model_name)
+        self.en_model = AutoModelForSequenceClassification.from_pretrained(self.cfg.en_model_name)
+        self.en_model.to(self.device)
+
+        self.en_sub_tokenizer = AutoTokenizer.from_pretrained(self.cfg.en_sub_model_name, add_prefix_space=True)
+        self.en_sub_model = AutoModelForSequenceClassification.from_pretrained(self.cfg.en_sub_model_name)
+        self.en_sub_model.to(self.device)
+
+        self.en_word_senti_tokenizer = AutoTokenizer.from_pretrained(self.cfg.en_word_senti_model_name,
+                                                                     add_prefix_space=True)
+        self.en_word_senti_model = AutoModel.from_pretrained(self.cfg.en_word_senti_model_name)
+        self.en_word_senti_model.to(self.device)
+
+        ### model configurations
+
         self.truncation = self.cfg.truncation
         self.padding = self.cfg.padding
         self.max_length = self.cfg.max_length
@@ -247,7 +271,7 @@ You can also modify configuration by calling update_config()
     def check_config(self):
         return self.cfg.get_config()
 
-    def chunk_text(self, text: str, max_length=512):
+    def chunk_text(self, text: str, max_length=512, language='KOREAN'):
         """
         Splits a given text into chunks for processing.
         Ensures that each chunk is within the specified maximum length.
@@ -259,17 +283,23 @@ You can also modify configuration by calling update_config()
         Yields:
             str: Chunks of the original text.
         """
-        tokens = self.ko_tokenizer.tokenize(text)
+        if language == 'KOREAN':
+            tokens = self.ko_tokenizer.tokenize(text)
+
+        elif language == 'ENGLISH':
+            tokens = self.en_tokenizer.tokenize(text)
+
         chunk_size = max_length - 2
         for i in range(0, len(tokens), chunk_size):
             yield ' '.join(tokens[i:i + chunk_size])
 
     def get_emotion(self,
-                sentence: str,
-                original_emotion: str = None,
-                default_specific_emotion: str = None,
-                normalized_emotion: str = None
-                ):
+                    sentence: str,
+                    original_emotion: str = None,
+                    default_specific_emotion: str = None,
+                    normalized_emotion: str = None,
+                    language: str = None,
+                    ):
         """
         Determines the overall emotion of a given sentence by analyzing it in chunks.
         Considers both the general and specific emotions to enhance accuracy.
@@ -284,23 +314,43 @@ You can also modify configuration by calling update_config()
             emotion (str) : string of overall emotion of the sentence. (positive, neutral, negative)
             specific_emotion (str) : string of specific emotion of the sentence. (one out of 60 emotions)
         """
+        pattern = '[^a-zA-Zㄱ-ㅎㅏ-ㅢ가-힣0-9+]'
+        sentence = re.sub(pattern, ' ', sentence)
+        # if language == None:
+        #     language = self.lang_detector(sentence)
         if original_emotion != None or default_specific_emotion != None or normalized_emotion != None:
-            chunks = list(self.chunk_text(sentence))
+            chunks = list(self.chunk_text(sentence, language=language))
             sum_prob = None
             num_chunks = 0
 
             for chunk in chunks:
-                if normalized_emotion != '-':
-                    inputs = self.ko_tokenizer(normalized_emotion + self.sep_token + chunk, return_tensors='pt',
-                                            padding=self.padding, truncation=self.truncation)
-                else:
-                    inputs = self.ko_tokenizer(default_specific_emotion + self.sep_token + chunk, return_tensors='pt',
-                                            padding=self.padding, truncation=self.truncation)
+                if language == 'KOREAN':
+                    if normalized_emotion != '-':
+                        inputs = self.ko_tokenizer(normalized_emotion + self.sep_token + chunk, return_tensors='pt',
+                                                   padding=self.padding, truncation=self.truncation,
+                                                   max_length=self.max_length)
+                    else:
+                        inputs = self.ko_tokenizer(default_specific_emotion + self.sep_token + chunk,
+                                                   return_tensors='pt',
+                                                   padding=self.padding, truncation=self.truncation,
+                                                   max_length=self.max_length)
+                    inputs = {k: v.to(self.device) for k, v in inputs.items()}
+                    with torch.no_grad():
+                        logits = self.ko_model(**inputs).logits
 
-                inputs = {k: v.to(self.device) for k, v in inputs.items()}
-
-                with torch.no_grad():
-                    logits = self.ko_model(**inputs).logits
+                elif language == 'ENGLISH':
+                    if normalized_emotion != '-':
+                        inputs = self.en_tokenizer(normalized_emotion + self.sep_token + chunk, return_tensors='pt',
+                                                   padding=self.padding, truncation=self.truncation,
+                                                   max_length=self.max_length)
+                    else:
+                        inputs = self.en_tokenizer(default_specific_emotion + self.sep_token + chunk,
+                                                   return_tensors='pt',
+                                                   padding=self.padding, truncation=self.truncation,
+                                                   max_length=self.max_length)
+                    inputs = {k: v.to(self.device) for k, v in inputs.items()}
+                    with torch.no_grad():
+                        logits = self.en_model(**inputs).logits
 
                 probabilities = torch.nn.functional.softmax(logits, dim=-1)
 
@@ -317,104 +367,183 @@ You can also modify configuration by calling update_config()
                 avg_prob = 0
                 sentiment_idx = avg_prob
 
-            if sentiment_idx in self.neg_tag:
-                emotion = 'negative'
-                specific_emotion = self.emotion_label[sentiment_idx]
-            elif sentiment_idx in self.pos_tag:
-                emotion = 'positive'
-                specific_emotion = self.emotion_label[sentiment_idx]
-            else:
-                emotion = 'neutral'
-                specific_emotion = self.emotion_label[sentiment_idx]
+            if language == 'KOREAN':
+                if sentiment_idx in self.neg_tag_ko:
+                    emotion = 'negative'
+                    specific_emotion = self.emotion_label_ko[sentiment_idx]
+                elif sentiment_idx in self.pos_tag_ko:
+                    emotion = 'positive'
+                    specific_emotion = self.emotion_label_ko[sentiment_idx]
+                else:
+                    emotion = 'neutral'
+                    specific_emotion = self.emotion_label_ko[sentiment_idx]
+
+            elif language == 'ENGLISH':
+                if sentiment_idx in self.neg_tag_en:
+                    emotion = 'negative'
+                    specific_emotion = self.emotion_label_en[sentiment_idx]
+                elif sentiment_idx in self.pos_tag_en:
+                    emotion = 'positive'
+                    specific_emotion = self.emotion_label_en[sentiment_idx]
+                else:
+                    emotion = 'neutral'
+                    specific_emotion = self.emotion_label_en[sentiment_idx]
+
 
             if original_emotion.strip() == emotion.strip():
                 return emotion, specific_emotion
             else:
-                emotion_counts = {'positive': 0, 'negative': 0}
+                emotion_counts = {'positive': 0, 'negative': 0, 'neutral': 0}
 
-                for chunk in chunks:
+            for chunk in chunks:
+                if language == 'KOREAN':
                     if normalized_emotion != '-':
-                        inputs = self.ko_sub_tokenizer(normalized_emotion + self.sep_token + chunk, return_tensors='pt',
-                                                    padding=self.padding, truncation=self.truncation)
+                        inputs = self.ko_sub_tokenizer(normalized_emotion + self.sep_token + chunk,
+                                                       return_tensors='pt',
+                                                       padding=self.padding, truncation=self.truncation,
+                                                       max_length=self.max_length)
                     else:
-                        inputs = self.ko_sub_tokenizer(default_specific_emotion + self.sep_token + chunk, return_tensors='pt',
-                                                    padding=self.padding, truncation=self.truncation)
-
+                        inputs = self.ko_sub_tokenizer(default_specific_emotion + self.sep_token + chunk,
+                                                       return_tensors='pt',
+                                                       padding=self.padding, truncation=self.truncation,
+                                                       max_length=self.max_length)
                     inputs = {k: v.to(self.device) for k, v in inputs.items()}
 
                     with torch.no_grad():
                         logits = self.ko_sub_model(**inputs).logits
-                    probabilities = torch.nn.functional.softmax(logits, dim=-1)
-                    emotion_pred = probabilities.argmax().item()  ##### majority votes
-                    if emotion_pred == 0:
-                        emotion_counts['negative'] += 1
-                    elif emotion_pred == 1:
-                        emotion_counts['positive'] += 1
 
-                if emotion_counts['negative'] > emotion_counts['positive']:
-                    emotion = 'negative'
-                elif emotion_counts['negative'] < emotion_counts['positive']:
-                    emotion = 'positive'
+                elif language == 'ENGLISH':
+                    if normalized_emotion != '-':
+                        inputs = self.en_sub_tokenizer(normalized_emotion + self.sep_token + chunk,
+                                                       return_tensors='pt',
+                                                       padding=self.padding, truncation=self.truncation,
+                                                       max_length=self.max_length)
+                    else:
+                        inputs = self.en_sub_tokenizer(default_specific_emotion + self.sep_token + chunk,
+                                                       return_tensors='pt',
+                                                       padding=self.padding, truncation=self.truncation,
+                                                       max_length=self.max_length)
+                    inputs = {k: v.to(self.device) for k, v in inputs.items()}
+
+                    with torch.no_grad():
+                        logits = self.en_sub_model(**inputs).logits
+
+                probabilities = torch.nn.functional.softmax(logits, dim=-1)
+                emotion_pred = probabilities.argmax().item()  ##### majority votes
+
+                if emotion_pred == 0:
+                    emotion_counts['negative'] += 1
+                elif emotion_pred == 1:
+                    emotion_counts['positive'] += 1
                 else:
-                    emotion = 'neutral'
-                specific_emotion = normalized_emotion
-                if original_emotion.strip() == emotion.strip():
-                    return emotion, specific_emotion
-                else:  ############ 여기에 아예 catboost를 써볼까....??
-                    sum_prob = None
-                    num_chunks = 0
-                    for chunk in chunks:
+                    emotion_counts['neutral'] += 1
+
+            if emotion_counts['neutral'] > emotion_counts['positive'] + emotion_counts['negative']:
+                emotion = 'neutral'
+            elif emotion_counts['negative'] > emotion_counts['positive']:
+                emotion = 'negative'
+            elif emotion_counts['negative'] < emotion_counts['positive']:
+                emotion = 'positive'
+            else:
+                emotion = 'neutral'
+
+            specific_emotion = normalized_emotion
+            if original_emotion.strip() == emotion.strip():
+                return emotion, specific_emotion
+            else:  ############ 여기에 아예 catboost를 써볼까....??
+                sum_prob = None
+                num_chunks = 0
+                for chunk in chunks:
+                    if language == 'KOREAN':
                         if normalized_emotion != '-':
-                            inputs = self.ko_sub_tokenizer(normalized_emotion + self.sep_token + chunk, return_tensors='pt',
-                                                        padding=self.padding, truncation=self.truncation)
+                            inputs = self.ko_sub_tokenizer(normalized_emotion + self.sep_token + chunk,
+                                                           return_tensors='pt',
+                                                           padding=self.padding, truncation=self.truncation,
+                                                           max_length=self.max_length)
                         else:
                             inputs = self.ko_sub_tokenizer(default_specific_emotion + self.sep_token + chunk,
-                                                        return_tensors='pt', padding=self.padding,
-                                                        truncation=self.truncation)
+                                                           return_tensors='pt', padding=self.padding,
+                                                           truncation=self.truncation, max_length=self.max_length)
 
                         inputs = {k: v.to(self.device) for k, v in inputs.items()}
 
                         with torch.no_grad():
                             logits = self.ko_sub_model(**inputs).logits
-                        probabilities = torch.nn.functional.softmax(logits, dim=-1)
-                        if sum_prob is None:
-                            sum_prob = probabilities
+
+                    elif language == 'ENGLISH':
+                        if normalized_emotion != '-':
+                            inputs = self.en_sub_tokenizer(normalized_emotion + self.sep_token + chunk,
+                                                           return_tensors='pt',
+                                                           padding=self.padding, truncation=self.truncation,
+                                                           max_length=self.max_length)
                         else:
-                            sum_prob += probabilities
-                        num_chunks += 1
+                            inputs = self.en_sub_tokenizer(default_specific_emotion + self.sep_token + chunk,
+                                                           return_tensors='pt', padding=self.padding,
+                                                           truncation=self.truncation, max_length=self.max_length)
 
-                    if num_chunks != 0 and sum_prob is not None:
-                        avg_prob = sum_prob / num_chunks
-                        emotion_ = avg_prob.argmax().item()
+                        inputs = {k: v.to(self.device) for k, v in inputs.items()}
 
+                        with torch.no_grad():
+                            logits = self.en_sub_model(**inputs).logits
+
+                    probabilities = torch.nn.functional.softmax(logits, dim=-1)
+                    if sum_prob is None:
+                        sum_prob = probabilities
                     else:
-                        emotion_ = None
+                        sum_prob += probabilities
+                    num_chunks += 1
 
-                    if emotion_ == 0:
-                        emotion = 'negative'
+                if num_chunks != 0 and sum_prob is not None:
+                    avg_prob = sum_prob / num_chunks
+                    emotion_ = avg_prob.argmax().item()
 
-                    elif emotion_ == 1:
-                        emotion = 'positive'
-                    else:
-                        emotion = 'neutral'
-                    return emotion, specific_emotion
+                else:
+                    emotion_ = None
+
+                if emotion_ == 0:
+                    emotion = 'negative'
+
+                elif emotion_ == 1:
+                    emotion = 'positive'
+                else:
+                    emotion = 'neutral'
+                return emotion, specific_emotion
 
         else:
-            chunks = list(self.chunk_text(sentence, max_length=int(self.max_length/5)))
+            chunks = list(self.chunk_text(sentence, max_length=int(self.max_length / 5), language=language))
             sum_prob = None
             num_chunks = 0
 
             for chunk_no in range(len(chunks)):
-                if chunk_no != len(chunks)-1:
-                    inputs = self.ko_tokenizer(chunks[chunk_no] + self.sep_token + chunks[chunk_no+1], return_tensors='pt',
-                                            padding=self.padding, truncation=self.truncation)
-                else:
-                    inputs = self.ko_tokenizer(chunks[chunk_no] + self.sep_token, return_tensors='pt',
-                        padding=self.padding, truncation=self.truncation)
-                inputs = {k: v.to(self.device) for k, v in inputs.items()}
+                if language == 'KOREAN':
+                    if chunk_no != len(chunks) - 1:
+                        inputs = self.ko_tokenizer(chunks[chunk_no] + self.sep_token + chunks[chunk_no + 1],
+                                                   return_tensors='pt',
+                                                   padding=self.padding, truncation=self.truncation,
+                                                   max_length=self.max_length)
+                    else:
+                        inputs = self.ko_tokenizer(chunks[chunk_no] + self.sep_token, return_tensors='pt',
+                                                   padding=self.padding, truncation=self.truncation,
+                                                   max_length=self.max_length)
+                    inputs = {k: v.to(self.device) for k, v in inputs.items()}
 
-                with torch.no_grad():
-                    logits = self.ko_model(**inputs).logits
+                    with torch.no_grad():
+                        logits = self.ko_model(**inputs).logits
+
+                elif language == 'ENGLISH':
+                    if chunk_no != len(chunks) - 1:
+                        inputs = self.en_tokenizer(chunks[chunk_no] + self.sep_token + chunks[chunk_no + 1],
+                                                   return_tensors='pt',
+                                                   padding=self.padding, truncation=self.truncation,
+                                                   max_length=self.max_length)
+                    else:
+                        inputs = self.en_tokenizer(chunks[chunk_no] + self.sep_token, return_tensors='pt',
+                                                   padding=self.padding, truncation=self.truncation,
+                                                   max_length=self.max_length)
+                    inputs = {k: v.to(self.device) for k, v in inputs.items()}
+
+                    with torch.no_grad():
+                        logits = self.en_model(**inputs).logits
 
                 probabilities = torch.nn.functional.softmax(logits, dim=-1)
 
@@ -430,28 +559,54 @@ You can also modify configuration by calling update_config()
             else:
                 avg_prob = 0
                 sentiment_idx = avg_prob
+            if language == 'KOREAN':
+                if sentiment_idx in self.neg_tag_ko:
+                    emotion = 'negative'
+                    specific_emotion = self.emotion_label_ko[sentiment_idx]
+                elif sentiment_idx in self.pos_tag_ko:
+                    emotion = 'positive'
+                    specific_emotion = self.emotion_label_ko[sentiment_idx]
+                else:
+                    emotion = 'neutral'
+                    specific_emotion = self.emotion_label_ko[sentiment_idx]
 
-            if sentiment_idx in self.neg_tag:
-                emotion = 'negative'
-                specific_emotion = self.emotion_label[sentiment_idx]
-            elif sentiment_idx in self.pos_tag:
-                emotion = 'positive'
-                specific_emotion = self.emotion_label[sentiment_idx]
-            else:
-                emotion = 'neutral'
-                specific_emotion = self.emotion_label[sentiment_idx]
+            elif language == 'ENGLISH':
+                if sentiment_idx in self.neg_tag_en:
+                    emotion = 'negative'
+                    specific_emotion = self.emotion_label_en[sentiment_idx]
+                elif sentiment_idx in self.pos_tag_en:
+                    emotion = 'positive'
+                    specific_emotion = self.emotion_label_en[sentiment_idx]
+                else:
+                    emotion = 'neutral'
+                    specific_emotion = self.emotion_label_en[sentiment_idx]
 
             sum_prob = None
             num_chunks = 0
 
             for chunk in chunks:
-                inputs = self.ko_tokenizer(emotion + self.sep_token + specific_emotion + self.sep_token + chunk, return_tensors='pt',
-                                        padding=self.padding, truncation=self.truncation)
+                if language == 'KOREAN':
+                    inputs = self.ko_tokenizer(emotion + self.sep_token + specific_emotion + self.sep_token + chunk,
+                                               return_tensors='pt',
+                                               padding=self.padding, truncation=self.truncation,
+                                               max_length=self.max_length)
 
-                inputs = {k: v.to(self.device) for k, v in inputs.items()}
+                    inputs = {k: v.to(self.device) for k, v in inputs.items()}
 
-                with torch.no_grad():
-                    logits = self.ko_model(**inputs).logits
+                    with torch.no_grad():
+                        logits = self.ko_model(**inputs).logits
+
+
+                elif language == 'ENGLISH':
+                    inputs = self.en_tokenizer(emotion + self.sep_token + specific_emotion + self.sep_token + chunk,
+                                               return_tensors='pt',
+                                               padding=self.padding, truncation=self.truncation,
+                                               max_length=self.max_length)
+
+                    inputs = {k: v.to(self.device) for k, v in inputs.items()}
+
+                    with torch.no_grad():
+                        logits = self.en_model(**inputs).logits
 
                 probabilities = torch.nn.functional.softmax(logits, dim=-1)
 
@@ -467,58 +622,101 @@ You can also modify configuration by calling update_config()
             else:
                 avg_prob = 0
                 sentiment_idx = avg_prob
+            if language == 'KOREAN':
+                if sentiment_idx in self.neg_tag_ko:
+                    new_emotion = 'negative'
+                    new_specific_emotion = self.emotion_label_ko[sentiment_idx]
+                elif sentiment_idx in self.pos_tag_ko:
+                    new_emotion = 'positive'
+                    new_specific_emotion = self.emotion_label_ko[sentiment_idx]
+                else:
+                    new_emotion = 'neutral'
+                    new_specific_emotion = self.emotion_label_ko[sentiment_idx]
 
-            if sentiment_idx in self.neg_tag:
-                new_emotion = 'negative'
-                new_specific_emotion = self.emotion_label[sentiment_idx]
-            elif sentiment_idx in self.pos_tag:
-                new_emotion = 'positive'
-                new_specific_emotion = self.emotion_label[sentiment_idx]
-            else:
-                new_emotion = 'neutral'
-                new_specific_emotion = self.emotion_label[sentiment_idx]
+            elif language == 'ENGLISH':
+                if sentiment_idx in self.neg_tag_en:
+                    new_emotion = 'negative'
+                    new_specific_emotion = self.emotion_label_en[sentiment_idx]
+                elif sentiment_idx in self.pos_tag_en:
+                    new_emotion = 'positive'
+                    new_specific_emotion = self.emotion_label_en[sentiment_idx]
+                else:
+                    new_emotion = 'neutral'
+                    new_specific_emotion = self.emotion_label_en[sentiment_idx]
 
             if new_emotion.strip() == emotion.strip():
                 return new_emotion, new_specific_emotion
             else:
                 # return emotion, specific_emotion
-                emotion_counts = {'positive': 0, 'negative': 0}
+                emotion_counts = {'positive': 0, 'negative': 0, 'neutral': 0}
 
                 for chunk in chunks:
-                    inputs = self.ko_sub_tokenizer(emotion + self.sep_token + specific_emotion + self.sep_token + chunk, return_tensors='pt',
-                                                padding=self.padding, truncation=self.truncation)
+                    if language == 'KOREAN':
+                        inputs = self.ko_sub_tokenizer(
+                            emotion + self.sep_token + specific_emotion + self.sep_token + chunk, return_tensors='pt',
+                            padding=self.padding, truncation=self.truncation, max_length=self.max_length)
 
-                    inputs = {k: v.to(self.device) for k, v in inputs.items()}
+                        inputs = {k: v.to(self.device) for k, v in inputs.items()}
 
-                    with torch.no_grad():
-                        logits = self.ko_sub_model(**inputs).logits
+                        with torch.no_grad():
+                            logits = self.ko_sub_model(**inputs).logits
+
+                    if language == 'ENGLISH':
+                        inputs = self.en_sub_tokenizer(
+                            emotion + self.sep_token + specific_emotion + self.sep_token + chunk, return_tensors='pt',
+                            padding=self.padding, truncation=self.truncation, max_length=self.max_length)
+
+                        inputs = {k: v.to(self.device) for k, v in inputs.items()}
+
+                        with torch.no_grad():
+                            logits = self.en_sub_model(**inputs).logits
+
                     probabilities = torch.nn.functional.softmax(logits, dim=-1)
                     emotion_pred = probabilities.argmax().item()  ##### majority votes
                     if emotion_pred == 0:
                         emotion_counts['negative'] += 1
                     elif emotion_pred == 1:
                         emotion_counts['positive'] += 1
+                    else:
+                        emotion_counts['neutral'] += 1
 
-                if emotion_counts['negative'] > emotion_counts['positive']:
+                if emotion_counts['neutral'] > emotion_counts['positive'] + emotion_counts['negative']:
+                    new_emotion = 'neutral'
+                elif emotion_counts['negative'] > emotion_counts['positive']:
                     new_emotion = 'negative'
                 elif emotion_counts['negative'] < emotion_counts['positive']:
                     new_emotion = 'positive'
                 else:
                     new_emotion = 'neutral'
+
                 if new_emotion.strip() == emotion.strip():
                     return new_emotion, new_specific_emotion
                 else:  ############ 여기에 아예 catboost를 써볼까....??
                     sum_prob = None
                     num_chunks = 0
                     for chunk in chunks:
-                        inputs = self.ko_sub_tokenizer(emotion + self.sep_token + specific_emotion + self.sep_token + chunk,
-                                                    return_tensors='pt',
-                                                    padding=self.padding, truncation=self.truncation)
+                        if language == 'KOREAN':
+                            inputs = self.ko_sub_tokenizer(
+                                emotion + self.sep_token + specific_emotion + self.sep_token + chunk,
+                                return_tensors='pt',
+                                padding=self.padding, truncation=self.truncation, max_length=self.max_length)
 
-                        inputs = {k: v.to(self.device) for k, v in inputs.items()}
+                            inputs = {k: v.to(self.device) for k, v in inputs.items()}
 
-                        with torch.no_grad():
-                            logits = self.ko_sub_model(**inputs).logits
+                            with torch.no_grad():
+                                logits = self.ko_sub_model(**inputs).logits
+
+                        if language == 'ENGLISH':
+                            inputs = self.en_sub_tokenizer(
+                                emotion + self.sep_token + specific_emotion + self.sep_token + chunk,
+                                return_tensors='pt',
+                                padding=self.padding, truncation=self.truncation, max_length=self.max_length)
+
+                            inputs = {k: v.to(self.device) for k, v in inputs.items()}
+
+                            with torch.no_grad():
+                                logits = self.en_sub_model(**inputs).logits
+
                         probabilities = torch.nn.functional.softmax(logits, dim=-1)
                         if sum_prob is None:
                             sum_prob = probabilities
@@ -540,9 +738,10 @@ You can also modify configuration by calling update_config()
                         new_emotion = 'positive'
                     else:
                         new_emotion = 'neutral'
+
                     return new_emotion, new_specific_emotion
 
-    def get_word_embeddings(self, sentence):
+    def get_word_embeddings(self, sentence, language):
         """
         Retrieves word embeddings for a given sentence using the specified tokenizer and model.
 
@@ -553,17 +752,36 @@ You can also modify configuration by calling update_config()
         Returns:
             tuple: A tuple containing word embeddings and offset mappings.
         """
-        inputs = self.ko_word_senti_tokenizer(sentence, return_tensors="pt", max_length=self.max_length,
-                                           truncation=self.truncation, padding='max_length',
-                                           return_offsets_mapping=True)
+        # pattern = '[^a-zA-Zㄱ-ㅎㅏ-ㅢ가-힣0-9+]'
+        # sentence = re.sub(pattern, ' ', sentence)
+
+        if language == 'KOREAN':
+            inputs = self.ko_word_senti_tokenizer(sentence, return_tensors="pt", max_length=self.max_length,
+                                                  truncation=self.truncation, padding='max_length',
+                                                  return_offsets_mapping=True)
+        if language == 'ENGLISH':
+            sentence = sentence.split()
+            # print(f'here here here : {sentence}')
+            inputs = self.en_word_senti_tokenizer(sentence, return_tensors="pt", max_length=self.max_length,
+                                                  truncation=self.truncation, padding='max_length',
+                                                  return_offsets_mapping=True,
+                                                  is_split_into_words=True)  # , return_special_tokens_mask=False)
         offset_mapping = inputs.pop('offset_mapping')
         inputs = {k: v.to(self.device) for k, v in inputs.items()}
-        with torch.no_grad():
-            outputs = self.ko_word_senti_model(**inputs)
+        # print(f'inputs \n{inputs}\n')
+        if language == 'KOREAN':
+            with torch.no_grad():
+                outputs = self.ko_word_senti_model(**inputs)
+        if language == 'ENGLISH':
+            with torch.no_grad():
+                outputs = self.en_word_senti_model(**inputs)
+        # print(f'outputs \n{outputs}\n')
         embeddings = outputs.last_hidden_state
+        # print(f'embeddings\n{embeddings}\n')
+        # print(f'offset_mapping\n{offset_mapping}\n')
         return embeddings, offset_mapping
 
-    def get_sentence_embedding(self, sentence):
+    def get_sentence_embedding(self, sentence, language):
         """
         Computes the embedding of a sentence by averaging the embeddings of its constituent tokens.
 
@@ -574,17 +792,30 @@ You can also modify configuration by calling update_config()
         Returns:
             torch.Tensor: The computed sentence embedding.
         """
-        inputs = self.ko_word_senti_tokenizer(sentence, return_tensors="pt", max_length=self.max_length,
-                                           truncation=self.truncation,
-                                           padding="max_length")
+        # pattern = '[^a-zA-Zㄱ-ㅎㅏ-ㅢ가-힣0-9+]'
+        # sentence = re.sub(pattern, ' ', sentence)
+        if language == 'KOREAN':
+            inputs = self.ko_word_senti_tokenizer(sentence, return_tensors="pt", max_length=self.max_length,
+                                                  truncation=self.truncation,
+                                                  padding="max_length")
+        if language == 'ENGLISH':
+            inputs = self.en_word_senti_tokenizer(sentence, return_tensors="pt", max_length=self.max_length,
+                                                  truncation=self.truncation,
+                                                  padding="max_length")
+
         inputs = {k: v.to(self.device) for k, v in inputs.items()}
-        with torch.no_grad():
-            outputs = self.ko_word_senti_model(**inputs)
+        if language == 'KOREAN':
+            with torch.no_grad():
+                outputs = self.ko_word_senti_model(**inputs)
+        if language == 'ENGLISH':
+            with torch.no_grad():
+                outputs = self.en_word_senti_model(**inputs)
+
         # Average the token embeddings to get the sentence embedding
         sentence_embedding = outputs.last_hidden_state[:, 0, :]
         return sentence_embedding
 
-    def get_emotion_embedding(self, emotion):
+    def get_emotion_embedding(self, emotion, language):
         """
         Computes the embedding for a general emotion label.
 
@@ -594,14 +825,26 @@ You can also modify configuration by calling update_config()
         Returns:
             torch.Tensor: The embedding of the specified emotion.
         """
-        inputs = self.ko_word_senti_tokenizer(emotion, return_tensors='pt', padding=self.padding,
-                                           truncation=self.truncation)
+        # pattern = '[^a-zA-Zㄱ-ㅎㅏ-ㅢ가-힣0-9+]'
+        # sentence = re.sub(pattern, ' ', emotion)
+        if language == 'KOREAN':
+            inputs = self.ko_word_senti_tokenizer(emotion, return_tensors='pt', padding=self.padding,
+                                                  truncation=self.truncation, max_length=self.max_length)
+        elif language == 'ENGLISH':
+            inputs = self.en_word_senti_tokenizer(emotion, return_tensors='pt', padding=self.padding,
+                                                  truncation=self.truncation, max_length=self.max_length)
         inputs = {k: v.to(self.device) for k, v in inputs.items()}
-        with torch.no_grad():
-            outputs = self.ko_word_senti_model(**inputs)
+        if language == 'KOREAN':
+            with torch.no_grad():
+                outputs = self.ko_word_senti_model(**inputs)
+
+        if language == 'ENGLISH':
+            with torch.no_grad():
+                outputs = self.en_word_senti_model(**inputs)
+
         return outputs.last_hidden_state.mean(dim=1)
 
-    def get_specific_emotion_embedding(self, specific_emotion):
+    def get_specific_emotion_embedding(self, specific_emotion, language):
         """
         Computes the embedding for a specific emotion label.
 
@@ -611,14 +854,27 @@ You can also modify configuration by calling update_config()
         Returns:
             torch.Tensor: The embedding of the specified specific emotion.
         """
-        inputs = self.ko_word_senti_tokenizer(specific_emotion, return_tensors='pt', padding=self.padding,
-                                           truncation=self.truncation)
+        # pattern = '[^a-zA-Zㄱ-ㅎㅏ-ㅢ가-힣0-9+]'
+        # sentence = re.sub(pattern, ' ', specific_emotion)
+        if language == 'KOREAN':
+            inputs = self.ko_word_senti_tokenizer(specific_emotion, return_tensors='pt', padding=self.padding,
+                                                  truncation=self.truncation, max_length=self.max_length)
+        if language == 'ENGLISH':
+            inputs = self.en_word_senti_tokenizer(specific_emotion, return_tensors='pt', padding=self.padding,
+                                                  truncation=self.truncation, max_length=self.max_length)
         inputs = {k: v.to(self.device) for k, v in inputs.items()}
-        with torch.no_grad():
-            outputs = self.ko_word_senti_model(**inputs)
+
+        if language == 'KOREAN':
+            with torch.no_grad():
+                outputs = self.ko_word_senti_model(**inputs)
+
+        if language == 'ENGLISH':
+            with torch.no_grad():
+                outputs = self.en_word_senti_model(**inputs)
+
         return outputs.last_hidden_state.mean(dim=1)
 
-    def calculate_vector_differences(self, sentence, emotion, specific_emotion):
+    def calculate_vector_differences(self, sentence, emotion, specific_emotion, language):
         """
         Calculates vector differences (dissimilarities) between words in a sentence and a combined emotion embedding.
 
@@ -630,10 +886,12 @@ You can also modify configuration by calling update_config()
         Returns:
             list: A list of dissimilarity scores for each word in the sentence.
         """
-        word_embeddings, offset_mapping = self.get_word_embeddings(sentence)
-        sentence_embedding = self.get_sentence_embedding(sentence)
-        emotion_embedding = self.get_emotion_embedding(emotion)
-        specific_emotion_embedding = self.get_emotion_embedding(specific_emotion)
+        pattern = '[^a-zA-Zㄱ-ㅎㅏ-ㅢ가-힣0-9+]'
+        sentence = re.sub(pattern, ' ', sentence)
+        word_embeddings, offset_mapping = self.get_word_embeddings(sentence, language)
+        sentence_embedding = self.get_sentence_embedding(sentence, language)
+        emotion_embedding = self.get_emotion_embedding(emotion, language)
+        specific_emotion_embedding = self.get_emotion_embedding(specific_emotion, language)
 
         general_alignment = F.cosine_similarity(sentence_embedding, emotion_embedding, dim=1)
         specific_alignment = F.cosine_similarity(sentence_embedding, specific_emotion_embedding, dim=1)
@@ -683,7 +941,7 @@ You can also modify configuration by calling update_config()
         normalized_scores = np.clip(normalized_scores, -1, 1)
         return normalized_scores.tolist()
 
-    def assign_word_sentiment_scores(self, sentence, normalized_scores):
+    def assign_word_sentiment_scores(self, sentence, normalized_scores, language):
         """
         Assigns sentiment scores to each word in a sentence based on normalized dissimilarities.
 
@@ -694,35 +952,83 @@ You can also modify configuration by calling update_config()
         Returns:
             dict: A dictionary mapping each word in the sentence to its sentiment score.
         """
-        encoded = self.ko_word_senti_tokenizer.encode_plus(sentence, return_tensors='pt', truncation=self.truncation,
-                                                        padding='max_length', max_length=512)
-        tokenized_words = self.ko_word_senti_tokenizer.convert_ids_to_tokens(encoded['input_ids'][0])
-        word_scores = []
-        current_word = ""
-        current_score = 0
-        num_tokens = 0
-        for token, score in zip(tokenized_words, normalized_scores):
+        if language == 'KOREAN':
+            encoded = self.ko_word_senti_tokenizer.encode_plus(sentence, return_tensors='pt',
+                                                               truncation=self.truncation,
+                                                               padding='max_length', max_length=512)
+            tokenized_words = self.ko_word_senti_tokenizer.convert_ids_to_tokens(encoded['input_ids'][0])
+            word_scores = []
+            current_word = ""
+            current_score = 0
+            num_tokens = 0
+            for token, score in zip(tokenized_words, normalized_scores):
 
-            if token.startswith("##"):
-                current_word += token.lstrip("##")
-                current_score += score
-                num_tokens += 1
-            else:
-                if current_word and not current_word.startswith('['):
-                    average_score = current_score / num_tokens if num_tokens > 0 else current_score
-                    word_scores.append({current_word: average_score})
-                current_word = token
-                current_score = score
-                num_tokens = 1
+                if token.startswith("##"):
+                    current_word += token.lstrip("##")
+                    current_score += score
+                    num_tokens += 1
+                elif token.startswith('▁'):
+                    current_word += token.lstrip("▁")
+                    current_score += score
+                    num_tokens += 1
+                else:
+                    if current_word and not current_word.startswith('['):
+                        average_score = current_score / num_tokens if num_tokens > 0 else current_score
+                        word_scores.append({current_word: average_score})
+                    current_word = token
+                    current_score = score
+                    num_tokens = 1
 
-        # Add the last word
-        if current_word and not current_word.startswith('['):
-            average_score = current_score / num_tokens if num_tokens > 0 else current_score
-            word_scores.append({current_word: average_score})
+            # Add the last word
+            if current_word and not current_word.startswith('['):
+                average_score = current_score / num_tokens if num_tokens > 0 else current_score
+                word_scores.append({current_word: average_score})
 
-        return word_scores
+            return word_scores
 
-    def word_emotions(self, sentence: str, emotion: str = None, specific_emotion: str = None):
+        elif language == 'ENGLISH':
+            sentence = sentence.split()
+            encoded = self.en_word_senti_tokenizer.encode_plus(sentence, return_tensors='pt',
+                                                               truncation=self.truncation,
+                                                               padding='max_length', is_split_into_words=True,
+                                                               return_special_tokens_mask=True,
+                                                               max_length=self.max_length)
+            tokenized_words = self.en_word_senti_tokenizer.convert_ids_to_tokens(encoded['input_ids'][0])
+            special_tokens_mask = encoded['special_tokens_mask'][0]
+
+            word_scores = []
+            current_word = ""
+            current_score = 0
+            num_tokens = 0
+            for token, score, is_special_token in zip(tokenized_words, normalized_scores, special_tokens_mask):
+                if is_special_token:
+                    continue
+                if token.startswith("##"):
+                    current_word += token.lstrip("##")
+                    current_score += score
+                    num_tokens += 1
+                # elif token.startswith('Ġ'):
+                #     current_word += token.lstrip("Ġ")
+                #     current_score += score
+                #     num_tokens += 1
+                #     # current_word=''
+
+                else:
+                    if current_word and not current_word.startswith('['):
+                        average_score = current_score / num_tokens if num_tokens > 0 else current_score
+                        word_scores.append({current_word: average_score})
+                    current_word = token
+                    current_score = score
+                    num_tokens = 1
+                current_word = current_word.replace('Ġ', '')
+            # Add the last word
+            if current_word and not current_word.startswith('['):
+                average_score = current_score / num_tokens if num_tokens > 0 else current_score
+                word_scores.append({current_word: average_score})
+
+            return word_scores
+
+    def word_emotions(self, sentence: str, emotion: str = None, specific_emotion: str = None, language=None):
         """
         Segments a sentence and assigns emotions to each word based on the overall sentence emotion and specific emotion.
 
@@ -734,21 +1040,31 @@ You can also modify configuration by calling update_config()
         Returns:
             dict: A dictionary mapping each word in the sentence to its assigned emotion.
         """
-        if emotion == None or specific_emotion == None:
-              emotion, specific_emotion = self.get_emotion(sentence)
+
         pattern = '[^ㄱ-ㅣ가-힣a-zA-Z0-9+]'
         sentence = re.sub(pattern, ' ', sentence)
-        dissimilarities = self.calculate_vector_differences(sentence, emotion, specific_emotion)
+        if emotion != None:
+            emotion = re.sub(pattern, ' ', emotion)
+        if specific_emotion != None:
+            specific_emotion = re.sub(pattern, ' ', specific_emotion)
+        if language == None:
+            language = self.lang_detector(sentence)
+        if emotion == None or specific_emotion == None:
+            emotion, specific_emotion = self.get_emotion(sentence, language=language)
+        ################################### 여기까지 ok #################################################
+        dissimilarities = self.calculate_vector_differences(sentence, emotion, specific_emotion, language=language)
+        # print(dissimilarities)
         norm_senti_score = self.normalize_sentiment_scores(dissimilarities)
-        word_sentiment_scores = self.assign_word_sentiment_scores(sentence, norm_senti_score)
+        word_sentiment_scores = self.assign_word_sentiment_scores(sentence, norm_senti_score, language=language)
         return word_sentiment_scores
 
     def noun_emotions(self,
                       sentence: str,
                       noun_list: list,
-                      emotion : str = None,
-                      specific_emotion : str = None,
-                      count: bool=False):
+                      emotion: str = None,
+                      specific_emotion: str = None,
+                      count: bool = False,
+                      language: str = None):
         """
         Analyzes emotions associated with specific nouns within a sentence.
 
@@ -761,9 +1077,10 @@ You can also modify configuration by calling update_config()
         Returns:
             dict: A dictionary categorizing nouns into positive, neutral, and negative based on their associated emotions.
         """
+        language = self.lang_detector(sentence)
         if emotion == None or specific_emotion == None:
-            emotion, specific_emotion = self.get_emotion(sentence)
-        word_emo_list = self.word_emotions(sentence, emotion, specific_emotion)
+            emotion, specific_emotion = self.get_emotion(sentence, language=language)
+        word_emo_list = self.word_emotions(sentence, emotion, specific_emotion, language)
 
         pos = defaultdict(list)
         neut = defaultdict(list)
