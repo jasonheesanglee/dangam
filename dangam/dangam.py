@@ -106,7 +106,7 @@ class DanGam:
         - Initialize the class with default or custom configuration.
         - Use its methods to perform detailed emotion segmentation and analysis in textual content.
     """
-    VERSION = '0.0.136'
+    VERSION = '0.0.137'
     CREATED_BY = 'jasonheesanglee\thttps://github.com/jasonheesanglee'
 
     def __init__(self, cfg=None):
@@ -316,8 +316,8 @@ You can also modify configuration by calling update_config()
         """
         pattern = '[^a-zA-Zㄱ-ㅎㅏ-ㅢ가-힣0-9+]'
         sentence = re.sub(pattern, ' ', sentence)
-        # if language == None:
-        #     language = self.lang_detector(sentence)
+        if language == None:
+            language = self.lang_detector(sentence)
         if original_emotion != None or default_specific_emotion != None or normalized_emotion != None:
             chunks = list(self.chunk_text(sentence, language=language))
             sum_prob = None
