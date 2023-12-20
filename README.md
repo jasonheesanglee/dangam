@@ -164,42 +164,44 @@ The primary objective of `word_segmentator` is to assign sentiment scores to eac
 These scores are not just arbitrary numbers; they represent how closely each word aligns with the overall emotional tone of the sentence.<br>This process involves several steps, starting from embedding extraction to sentiment score normalization.<br><br>
 
 `get_emotion(sentence, origianl_emotion, default_specific_emotion, normalized_emotion, language)`:<br>
-  Determines the overall emotion of a given sentence by analyzing it in chunks.<br>
-  Considers both the general and specific emotions to enhance accuracy.<br>
-  
-  Arguments:
-    - `sentence` : str - *The sentence to extract the emotions from.*
-    - `original_emotion` (str) -> optional : *The pre-segmented emotion (positive, negative, neutral)*
-    - `default_specific_emotion` (str) -> optional : *The pre-segmented specific emotion (love, thrilled, happy, sad, etc..)*
-    - `normalized_emotion` (str) -> optional : *Normalized User input emotion (good food, bad person, lovely day, etc..)*
-    - `language` (str) -> optional : *Either `KOREAN` or `ENGLISH`*
-  Returns:
-    - `emotion` (str) : *A string of overall emotion of the sentence. (positive, neutral, negative)*
-    - `specific_emotion` (str) : *A string of specific emotion of the sentence. (one out of 60 emotions)*
+Determines the overall emotion of a given sentence by analyzing it in chunks.<br>
+Considers both the general and specific emotions to enhance accuracy.<br>
 
-    
+Arguments:
+- `sentence` : str - *The sentence to extract the emotions from.*
+- `original_emotion` (str) -> optional : *The pre-segmented emotion (positive, negative, neutral)*
+- `default_specific_emotion` (str) -> optional : *The pre-segmented specific emotion (love, thrilled, happy, sad, etc..)*
+- `normalized_emotion` (str) -> optional : *Normalized User input emotion (good food, bad person, lovely day, etc..)*
+- `language` (str) -> optional : *Either `KOREAN` or `ENGLISH`*
+
+Returns:
+- `emotion` (str) : *A string of overall emotion of the sentence. (positive, neutral, negative)*
+- `specific_emotion` (str) : *A string of specific emotion of the sentence. (one out of 60 emotions)
+<br>
+<br>
+
 `word_emotions(sentence, emotion, specific_emotion)`:<br>
-  Segments a sentence and assigns emotions to each word based on the overall sentence emotion and specific emotion.<br>
-  Args:<br>
-    - `sentence` (str): The sentence for segmentation.
-    -  `emotion` (str) -> Optional: The general emotion of the sentence.
-    -  `specific_emotion` (str) -> Optional: The specific emotion of the sentence.
-    - `language` (str) -> optional : *Either `KOREAN` or `ENGLISH`*
-  Returns:
-      `dict`: A dictionary mapping each word in the sentence to its assigned emotion.
+Segments a sentence and assigns emotions to each word based on the overall sentence emotion and specific emotion.<br>
+Args:
+- `sentence` (str): The sentence for segmentation.
+- `emotion` (str) -> Optional: The general emotion of the sentence.
+- `specific_emotion` (str) -> Optional: The specific emotion of the sentence.
+- `language` (str) -> optional : *Either `KOREAN` or `ENGLISH`*
+Returns:
+- `dict`: A dictionary mapping each word in the sentence to its assigned emotion.
 
 `noun_emotions(sentence, noun_list, count, language)`:<br>
-  Analyzes emotions associated with specific nouns within a sentence.
-  Args:
-      - `sentence` (str): The sentence containing the nouns for emotion analysis.
-      - `emotion` (str) -> Optional: The general emotion of the sentence.
-      - `specific_emotion` (str) -> Optional: The specific emotion of the sentence.
-      - `noun_list` (list): A list of nouns to analyze within the sentence.
-      - `count` (bool) default -> False : True or False for switching on off counting the number of nouns in each segment.
-      - `language` (str) -> optional : *Either `KOREAN` or `ENGLISH`*
+Analyzes emotions associated with specific nouns within a sentence.<br>
+Args:
+- `sentence` (str): The sentence containing the nouns for emotion analysis.
+- `emotion` (str) -> Optional: The general emotion of the sentence.
+- `specific_emotion` (str) -> Optional: The specific emotion of the sentence.
+- `noun_list` (list): A list of nouns to analyze within the sentence.
+- `count` (bool) default -> False : True or False for switching on off counting the number of nouns in each segment.
+- `language` (str) -> optional : *Either `KOREAN` or `ENGLISH`*
 
-  Returns:
-      `dict`: A dictionary categorizing nouns into positive, neutral, and negative based on their associated emotions.
+Returns:
+-`dict`: A dictionary categorizing nouns into positive, neutral, and negative based on their associated emotions.
   
 
 ## Embedding Extraction and Analysis
