@@ -88,7 +88,7 @@ print(words_emotion)
 ```
 
 ## Configuration
-DanGam allows a wide range of degrees of customization. <sub>~~(at least trying)~~</sub> <br>
+DanGam allows a wide range of customization. <sub>~~(at least trying)~~</sub> <br>
 You can modify various settings like model names, column names, etc., to fit your specific needs.
 - Initialization:
   - When initially calling `DanGam`, you can add configuration setting in a form of Dictionary.<br>
