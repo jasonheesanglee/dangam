@@ -1028,7 +1028,11 @@ You can also modify configuration by calling update_config()
 
             return word_scores
 
-    def word_emotions(self, sentence: str, emotion: str = None, specific_emotion: str = None, language=None):
+    def word_emotions(self, 
+                      sentence: str,
+                      emotion: str = None,
+                      specific_emotion: str = None,
+                      language=None):
         """
         Segments a sentence and assigns emotions to each word based on the overall sentence emotion and specific emotion.
 
